@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School Result Management System</title>
+    <style>
+        /* --- CORE VARIABLES & RESET --- */
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --secondary: #64748b;
+            --bg: #f1f5f9;
+            --surface: #ffffff;
+            --text: #0f172a;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --radius: 8px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+        body { font-family: 'Segoe UI', Roboto, sans-serif; background-color: var(--bg); color: var(--text); line-height: 1.6; min-height: 100vh; }
+        
+        /* --- UTILITIES --- */
+        .hidden { display: none !important; }
+        .flex { display: flex; }
+        .flex-col { flex-direction: column; }
+        .items-center { align-items: center; }
+        .justify-between { justify-content: space-between; }
+        .gap-2 { gap: 0.5rem; }
+        .gap-4 { gap: 1rem; }
+        .text-sm { font-size: 0.875rem; }
+        .font-bold { font-weight: 700; }
+        .w-full { width: 100%; }
+        
+        /* --- BUTTONS --- */
+        .btn { padding: 0.6rem 1.2rem; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.2s; font-size: 0.9rem; }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .btn-primary { background-color: var(--primary); color: white; }
+        .btn-primary:hover { background-color: var(--primary-dark); }
+        .btn-outline { background-color: transparent; border: 1px solid var(--primary); color: var(--primary); }
+        .btn-outline:hover { background-color: #eff6ff; }
+        .btn-danger { background-color: var(--danger); color: white; }
+        .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.85rem; }
+
+        /* --- AUTH VIEW STYLES --- */
+        .auth-wrapper {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .auth-container {
+            background: white;
+            width: 100%;
+            max-width: 600px; /* Slightly wider for split inputs */
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            overflow: hidden;
+            animation: slideUp 0.4s ease;
+        }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .auth-header { text-align: center; padding: 0; border-bottom: 1px solid #eee; }
+        .app-title { padding: 20px 0 10px; font-size: 1.5rem; font-weight: 700; color: var(--text); }
+        .tabs { display: flex; }
+        .tab-btn { flex: 1; padding: 15px; border: none; background: #f8f9fa; cursor: pointer; color: #777; transition: 0.3s; border-bottom: 2px solid transparent; }
+        .tab-btn.active { background: white; color: var(--primary); border-bottom: 2px solid var(--primary); }
+        
+        .forms-wrapper { padding: 30px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 6px; font-size: 0.9rem; color: #555; font-weight: 500; }
+        .form-control { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: var(--radius); font-size: 1rem; transition: border 0.3s; }
+        .form-control:focus { border-color: var(--primary); }
+        
+        /* Name Split Row */
+        .name-row { display: flex; gap: 10px; }
+        .name-row .form-group { flex: 1; }
+
+        /* Subject Builder */
+        .subject-builder { background: #f8fafc; padding: 15px; border-radius: var(--radius); border: 1px dashed #cbd5e1; margin-bottom: 15px; }
+        .chip-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+        .subject-chip { background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; display: flex; align-items: center; gap: 6px; }
+        .chip-remove { cursor: pointer; font-weight: bold; color: #dc2626; }
+        .chip-remove:hover { color: #b91c1c; }
+
+        /* --- DASHBOARD VIEW STYLES --- */
+        header { background: var(--surface); padding: 1rem 2rem; box-shadow: var(--shadow); display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 1.25rem; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+        
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        
+        /* Dashboard Grid */
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+        .card { background: var(--surface); border-radius: 12px; padding: 20px; box-shadow: var(--shadow); border: 1px solid var(--border); transition: transform 0.2s; cursor: pointer; }
+        .card:hover { transform: translateY(-4px); border-color: var(--primary); }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+        .badge-jss { background: #e0f2fe; color: #0369a1; }
+        .badge-sss { background: #fef3c7; color: #b45309; }
+
+        /* Tables */
+        .table-container { overflow-x: auto; background: var(--surface); border-radius: 8px; box-shadow: var(--shadow); }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: #f8fafc; font-weight: 600; color: var(--secondary); font-size: 0.9rem; }
+        tr:hover { background: #f1f5f9; }
+
+        /* Score Entry */
+        .score-card { background: var(--surface); padding: 25px; border-radius: 12px; box-shadow: var(--shadow); }
+        .score-header { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+        .avatar { width: 50px; height: 50px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: bold; }
+        
+        .score-row { display: grid; grid-template-columns: 2fr 1fr 1fr 80px; align-items: center; padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
+        .score-input { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px; text-align: center; }
+        .score-input:disabled { background: #f8fafc; color: #94a3b8; cursor: not-allowed; border-color: transparent; }
+        .subject-label { font-weight: 500; display: flex; flex-direction: column; }
+        .readonly-badge { font-size: 0.7rem; color: var(--secondary); font-weight: normal; font-style: italic; }
+        
+        /* Modals */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal { background: white; width: 90%; max-width: 500px; border-radius: 10px; padding: 25px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); animation: slideUp 0.3s ease; max-height: 90vh; overflow-y: auto; }
+
+        /* Toast */
+        .toast { position: fixed; bottom: 20px; right: 20px; padding: 12px 20px; border-radius: 8px; color: white; font-weight: 500; transform: translateY(100px); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 2000; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .toast.show { transform: translateY(0); }
+        .toast.success { background-color: var(--success); }
+        .toast.error { background-color: var(--danger); }
+
+        /* Breadcrumbs */
+        .breadcrumbs { font-size: 0.9rem; color: var(--secondary); margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+        .breadcrumbs span { cursor: pointer; }
+        .breadcrumbs span:hover { color: var(--primary); text-decoration: underline; }
+        .breadcrumbs span:last-child { cursor: default; color: var(--text); font-weight: 600; text-decoration: none; }
+
+        /* Print Styles */
+        #printable-area { display: none; }
+        @media print {
+            body * { visibility: hidden; }
+            #printable-area, #printable-area * { visibility: visible; }
+            #printable-area { display: block; position: absolute; left: 0; top: 0; width: 100%; background: white; padding: 20px; font-family: 'Times New Roman', serif; }
+            .rp-header { text-align: center; border-bottom: 3px double #000; padding-bottom: 10px; margin-bottom: 20px; }
+            .rp-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+            .rp-table th, .rp-table td { border: 1px solid #000; padding: 8px; text-align: center; }
+            .rp-signatures { display: flex; justify-content: space-between; margin-top: 50px; }
+            .rp-sig-box { text-align: center; }
+            .rp-line { border-top: 1px solid #000; margin-top: 40px; width: 200px; margin-left: auto; margin-right: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ================= AUTH VIEW ================= -->
+    <div id="view-auth" class="auth-wrapper">
+        <div class="auth-container">
+            <div class="auth-header">
+                <h1 class="app-title">Teacher Portal</h1>
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="app.switchAuthTab('login')">Login</button>
+                    <button class="tab-btn" onclick="app.switchAuthTab('signup')">Sign Up</button>
+                </div>
+            </div>
+
+            <div class="forms-wrapper">
+                
+                <!-- LOGIN FORM -->
+                <form id="form-login" onsubmit="app.handleLogin(event)">
+                    <!-- UPDATED: Split Name Inputs for Login -->
+                    <div class="name-row">
+                        <div class="form-group">
+                            <label>Title</label>
+                            <select id="loginTitle" class="form-control">
+                                <option value="Mr.">Mr.</option>
+                                <option value="Mrs.">Mrs.</option>
+                                <option value="Miss">Miss</option>
+                                <option value="Dr.">Dr.</option>
+                                <option value="Prof.">Prof.</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>First Name</label>
+                            <input type="text" id="loginFirstName" class="form-control" placeholder="First Name" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Last Name</label>
+                            <input type="text" id="loginLastName" class="form-control" placeholder="Last Name" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="loginPass" class="form-control" placeholder="••••••" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-full">Login to Dashboard</button>
+                </form>
+
+                <!-- SIGNUP FORM -->
+                <form id="form-signup" class="hidden" onsubmit="app.handleSignup(event)">
+                    
+                    <div class="form-group">
+                        <label>Role</label>
+                        <select id="signupRole" class="form-control" onchange="app.handleRoleChange()" required>
+                            <option value="Teacher">Teacher</option>
+                            <option value="Class Teacher">Class Teacher</option>
+                            <option value="Admin">Admin</option>
+                            <option value="Head">Head</option>
+                        </select>
+                    </div>
+
+                    <!-- NAME INPUTS (Same for Signup) -->
+                    <div class="name-row">
+                        <div class="form-group">
+                            <label>Title</label>
+                            <select id="signupTitle" class="form-control">
+                                <option value="Mr.">Mr.</option>
+                                <option value="Mrs.">Mrs.</option>
+                                <option value="Miss">Miss</option>
+                                <option value="Dr.">Dr.</option>
+                                <option value="Prof.">Prof.</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>First Name</label>
+                            <input type="text" id="signupFirstName" class="form-control" placeholder="First Name" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Last Name</label>
+                            <input type="text" id="signupLastName" class="form-control" placeholder="Last Name" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="signupPass" class="form-control" required>
+                    </div>
+
+                    <!-- CLASS TEACHER SPECIFIC -->
+                    <div id="class-teacher-group" class="hidden form-group">
+                        <label>Assigned Class (As Class Teacher)</label>
+                        <select id="signupClass" class="form-control">
+                            <option value="" disabled selected>Select Class</option>
+                            <option value="JSS1">JSS1</option><option value="JSS2">JSS2</option><option value="JSS3">JSS3</option>
+                            <option value="SSS1">SSS1</option><option value="SSS2">SSS2</option><option value="SSS3">SSS3</option>
+                        </select>
+                    </div>
+
+                    <!-- TEACHER SPECIFIC: SUBJECT BUILDER -->
+                    <div id="subject-group">
+                        <div class="subject-builder">
+                            <label style="margin-bottom:8px; display:block;">Subjects Taught</label>
+                            <div class="flex gap-2">
+                                <select id="subjectLevel" class="form-control" onchange="app.populateSubjects()">
+                                    <option value="" disabled selected>Level</option>
+                                    <option value="JSS">JSS Level</option>
+                                    <option value="SSS">SSS Level</option>
+                                </select>
+                                <select id="subjectName" class="form-control">
+                                    <option value="" disabled selected>Select Subject</option>
+                                </select>
+                                <select id="subjectClass" class="form-control">
+                                    <option value="" disabled selected>Class</option>
+                                </select>
+                                <button type="button" class="btn btn-primary" onclick="app.addSubject()">+</button>
+                            </div>
+                            <div id="chipList" class="chip-list"></div>
+                            <small id="subjectError" style="color:var(--danger); display:none;">Add at least one subject</small>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-full">Create Account</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= DASHBOARD VIEW ================= -->
+    <div id="view-dashboard" class="hidden">
+        <header>
+            <div class="logo">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                EduManager
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="text-right">
+                    <div id="user-display-name" class="font-bold">Teacher Name</div>
+                    <div id="user-display-role" class="text-sm text-secondary" style="font-size:0.8rem">Role</div>
+                </div>
+                <button class="btn btn-outline btn-sm" onclick="app.logout()">Logout</button>
+            </div>
+        </header>
+
+        <main class="container">
+            
+            <!-- 1. CLASS LIST VIEW -->
+            <section id="section-classes">
+                <h2 style="margin-bottom:15px;">My Classes</h2>
+                <div class="dashboard-grid" id="class-grid">
+                    <!-- Classes injected here -->
+                </div>
+            </section>
+
+            <!-- 2. STUDENT LIST VIEW -->
+            <section id="section-students" class="hidden">
+                <div class="breadcrumbs">
+                    <span onclick="app.showView('section-classes')">Classes</span> > 
+                    <span id="breadcrumb-class"></span>
+                </div>
+                <div class="flex justify-between items-center" style="margin-bottom:20px;">
+                    <h2>Students</h2>
+                    <div class="flex gap-2">
+                        <input type="text" id="searchInput" class="form-control" placeholder="Search..." style="width:200px;" onkeyup="app.filterStudents()">
+                        <button class="btn btn-primary" onclick="app.openAddStudentModal()">+ Add Student</button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead><tr><th>Admin No</th><th>Name</th><th>Gender</th><th>Action</th></tr></thead>
+                        <tbody id="student-rows"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- 3. SCORE ENTRY VIEW -->
+            <section id="section-scores" class="hidden">
+                <div class="breadcrumbs">
+                    <span onclick="app.showView('section-classes')">Classes</span> > 
+                    <span id="score-crumb-class" onclick="app.backToStudents()"></span> > 
+                    <span id="score-crumb-name"></span>
+                </div>
+
+                <div class="score-card">
+                    <div class="score-header">
+                        <div class="avatar" id="score-avatar">?</div>
+                        <div>
+                            <h2 id="score-name">Student Name</h2>
+                            <p class="text-secondary" id="score-details">Class Info</p>
+                        </div>
+                    </div>
+
+                    <form id="scoreForm" onsubmit="app.saveScores(event)">
+                        <div id="score-rows-container"></div>
+                        
+                        <div class="flex justify-between items-center" style="margin-top:30px; border-top:1px solid #eee; padding-top:20px;">
+                            <button type="button" class="btn btn-outline" onclick="app.backToStudents()">Back</button>
+                            <div class="flex gap-2">
+                                <button type="button" class="btn btn-outline" onclick="app.openPrintModal()">Print Result</button>
+                                <button type="submit" class="btn btn-primary">Save Results</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- ================= MODALS ================= -->
+    
+    <!-- Add Student Modal -->
+    <div id="modal-add-student" class="modal-overlay">
+        <div class="modal">
+            <h3 style="margin-bottom:15px;">Add New Student</h3>
+            <div class="form-group"><label>Full Name</label><input type="text" id="newStdName" class="form-control"></div>
+            <div class="form-group"><label>Admin Number (ID)</label><input type="text" id="newStdId" class="form-control"></div>
+            <div class="form-group"><label>Gender</label><select id="newStdGender" class="form-control"><option>Male</option><option>Female</option></select></div>
+            <div id="modal-dept-group" class="form-group hidden">
+                <label>Department</label>
+                <select id="newStdDept" class="form-control"><option value="Science">Science</option><option value="Art">Art</option><option value="Commercial">Commercial</option></select>
+            </div>
+            <div class="flex justify-between" style="margin-top:20px;">
+                <button type="button" class="btn btn-outline" onclick="app.closeModals()">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="app.addStudent()">Save Student</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Print Modal -->
+    <div id="modal-print" class="modal-overlay">
+        <div class="modal">
+            <h3 style="margin-bottom:15px;">Print Configuration</h3>
+            <div class="form-group"><label>Session</label><input type="text" id="printSession" value="2024/2025" class="form-control"></div>
+            <div class="form-group"><label>Term</label><select id="printTerm" class="form-control"><option>1st Term</option><option>2nd Term</option><option>3rd Term</option></select></div>
+            <div class="form-group"><label>Class Teacher Comment</label><textarea id="printComment" class="form-control" rows="3"></textarea></div>
+            <div class="flex justify-between" style="margin-top:20px;">
+                <button type="button" class="btn btn-outline" onclick="app.closeModals()">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="app.generateReport()">Print Preview</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <span id="toast-icon"></span>
+        <span id="toast-msg">Message</span>
+    </div>
+
+    <!-- ================= PRINTABLE AREA ================= -->
+    <div id="printable-area">
+        <div class="rp-header">
+            <h2>NIFTY STEPS COLLEGE</h2>
+            <p>31 Yinka Ogunfile Street, Igbo Oluwo Estate, Ikorodu, Lagos</p>
+            <h3 style="margin-top:10px; text-decoration:underline;">MID-TERM REPORT SHEET</h3>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+            <div><strong>Name:</strong> <span id="p-name"></span></div>
+            <div><strong>Class:</strong> <span id="p-class"></span></div>
+            <div><strong>Session:</strong> <span id="p-session"></span></div>
+        </div>
+        <table class="rp-table">
+            <thead><tr><th>Subject</th><th>CA (40)</th><th>Exam (60)</th><th>Total (100)</th><th>Grade</th><th>Remark</th></tr></thead>
+            <tbody id="p-body"></tbody>
+        </table>
+        <div style="margin-top:30px;">
+            <p><strong>Class Teacher's Remark:</strong> <span id="p-comment"></span></p>
+        </div>
+        <div class="rp-signatures">
+            <div class="rp-sig-box"><div>Class Teacher</div><div class="rp-line"></div></div>
+            <div class="rp-sig-box"><div>Principal</div><div class="rp-line"></div></div>
+        </div>
+    </div>
+
+    <!-- ================= JAVASCRIPT LOGIC ================= -->
+    <script>
+        // --- CONFIGURATION ---
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxzYpjmxaAYa5IpQ9QpAsVjkWgUKchJWuVopp4YuWjcLZIaBSe5NHJIicmBoGOnSScp/exec';
+
+        // --- MOCK DATABASE (DEMO MODE) ---
+        const MockDB = {
+            users: [],
+            students: [
+                { id: '1001', name: 'John Doe', class: 'JSS1', gender: 'Male', scores: { English: {ca:20, exam:30}, Math: {ca:10, exam:20} } },
+                { id: '1002', name: 'Jane Smith', class: 'JSS1', gender: 'Female', scores: { English: {ca:25, exam:35}, Math: {ca:15, exam:30} } },
+                { id: '1003', name: 'Emeka Okafor', class: 'JSS2', gender: 'Male', scores: { English: {ca:30, exam:40}, Math: {ca:20, exam:20} } },
+                { id: '1004', name: 'Chioma Adebayo', class: 'JSS3', gender: 'Female', scores: { English: {ca:20, exam:30}, Math: {ca:10, exam:20} } },
+                { id: '2001', name: 'Tunde Bakare', class: 'SSS1', gender: 'Male', dept: 'Science', scores: { Physics: {ca:30, exam:40}, Chemistry: {ca:20, exam:20} } }
+            ],
+            
+            init: function() {
+                const storedUsers = localStorage.getItem('edu_users');
+                if(storedUsers) {
+                    this.users = JSON.parse(storedUsers);
+                } else {
+                    // Default Admin - Updated name to include Title for new login logic
+                    this.users.push({ 
+                        name: 'Mr. Admin User', 
+                        firstName: 'Admin', 
+                        lastName: 'User', 
+                        title: 'Mr.', 
+                        pass: 'admin123', 
+                        role: 'Admin', 
+                        subjects: [], 
+                        assignedClass: '' 
+                    });
+                    this.save();
+                }
+
+                const storedStudents = localStorage.getItem('edu_students');
+                if(storedStudents) this.students = JSON.parse(storedStudents);
+            },
+
+            save: function() {
+                localStorage.setItem('edu_users', JSON.stringify(this.users));
+                localStorage.setItem('edu_students', JSON.stringify(this.students));
+            },
+
+            findUser: function(name, pass) {
+                return this.users.find(u => u.name.toLowerCase() === name.toLowerCase() && u.pass === pass);
+            },
+
+            addUser: function(user) {
+                this.users.push(user);
+                this.save();
+            },
+
+            addStudent: function(student) {
+                this.students.push(student);
+                this.save();
+            },
+
+            updateStudentScores: function(id, scores) {
+                const idx = this.students.findIndex(s => s.id === id);
+                if(idx !== -1) {
+                    this.students[idx].scores = scores;
+                    this.save();
+                }
+            }
+        };
+
+        // --- CONSTANTS ---
+        const SUBJECTS = {
+            JSS: ['English', 'Mathematics', 'Basic Science', 'Social Studies', 'Civic Ed', 'PHE', 'BST', 'Creative Arts', 'Yoruba', 'French'],
+            SSS: ['English', 'Mathematics', 'Physics', 'Chemistry', 'Biology', 'Economics', 'Geography', 'Literature', 'Government']
+        };
+        const ALL_CLASSES = ['JSS1', 'JSS2', 'JSS3', 'SSS1', 'SSS2', 'SSS3'];
+
+        // --- APP CONTROLLER ---
+        const app = {
+            state: {
+                currentUser: null,
+                currentClass: null,
+                currentStudent: null,
+                draftSubjects: [] 
+            },
+
+            init: function() {
+                MockDB.init();
+                
+                // Check session
+                const sessionUser = sessionStorage.getItem('currentUser');
+                if(sessionUser) {
+                    this.state.currentUser = JSON.parse(sessionUser);
+                    this.showDashboard();
+                } else {
+                    document.getElementById('view-auth').classList.remove('hidden');
+                }
+
+                // Init subject dropdowns
+                this.populateSubjects();
+            },
+
+            // --- AUTHENTICATION ---
+            switchAuthTab: function(tab) {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                event.target.classList.add('active');
+                
+                if(tab === 'login') {
+                    document.getElementById('form-login').classList.remove('hidden');
+                    document.getElementById('form-signup').classList.add('hidden');
+                } else {
+                    document.getElementById('form-login').classList.add('hidden');
+                    document.getElementById('form-signup').classList.remove('hidden');
+                }
+            },
+
+            handleRoleChange: function() {
+                const role = document.getElementById('signupRole').value;
+                const ctGroup = document.getElementById('class-teacher-group');
+                const subGroup = document.getElementById('subject-group');
+
+                // Reset
+                ctGroup.classList.add('hidden');
+                subGroup.classList.remove('hidden');
+
+                if (role === 'Class Teacher') {
+                    ctGroup.classList.remove('hidden');
+                } else if (role === 'Admin' || role === 'Head') {
+                    subGroup.classList.add('hidden');
+                    this.state.draftSubjects = []; // Clear subjects for admins
+                }
+            },
+
+            populateSubjects: function() {
+                const level = document.getElementById('subjectLevel').value;
+                const subSelect = document.getElementById('subjectName');
+                const clsSelect = document.getElementById('subjectClass');
+                
+                subSelect.innerHTML = '<option value="" disabled selected>Select Subject</option>';
+                clsSelect.innerHTML = '<option value="" disabled selected>Select Class</option>';
+
+                if(!level) return;
+
+                const subs = SUBJECTS[level];
+                subs.forEach(s => subSelect.innerHTML += `<option value="${s}">${s}</option>`);
+
+                if(level === 'JSS') {
+                    clsSelect.innerHTML += `<option value="ALL JSS">ALL JSS Classes</option>`;
+                    clsSelect.innerHTML += `<option value="JSS1">JSS1</option><option value="JSS2">JSS2</option><option value="JSS3">JSS3</option>`;
+                } else {
+                    clsSelect.innerHTML += `<option value="ALL SSS">ALL SSS Classes</option>`;
+                    clsSelect.innerHTML += `<option value="SSS1">SSS1</option><option value="SSS2">SSS2</option><option value="SSS3">SSS3</option>`;
+                }
+            },
+
+            addSubject: function() {
+                const sub = document.getElementById('subjectName').value;
+                const cls = document.getElementById('subjectClass').value;
+
+                if(!sub || !cls) {
+                    this.showToast('Please select subject and class', 'error');
+                    return;
+                }
+
+                // Check for duplicates
+                const exists = this.state.draftSubjects.some(s => s.subject === sub && s.class === cls);
+                if(exists) {
+                    this.showToast('This combination already added', 'error');
+                    return;
+                }
+
+                this.state.draftSubjects.push({ subject: sub, class: cls });
+                this.renderChips();
+            },
+
+            removeSubject: function(idx) {
+                this.state.draftSubjects.splice(idx, 1);
+                this.renderChips();
+            },
+
+            renderChips: function() {
+                const list = document.getElementById('chipList');
+                list.innerHTML = '';
+                this.state.draftSubjects.forEach((s, i) => {
+                    list.innerHTML += `
+                        <div class="subject-chip">
+                            ${s.subject} (${s.class})
+                            <span class="chip-remove" onclick="app.removeSubject(${i})">&times;</span>
+                        </div>`;
+                });
+            },
+
+            handleSignup: function(e) {
+                e.preventDefault();
+                const title = document.getElementById('signupTitle').value;
+                const fname = document.getElementById('signupFirstName').value;
+                const lname = document.getElementById('signupLastName').value;
+                const fullName = `${title} ${fname} ${lname}`;
+                
+                const pass = document.getElementById('signupPass').value;
+                const role = document.getElementById('signupRole').value;
+                let assignedClass = '';
+
+                if(role === 'Class Teacher') {
+                    assignedClass = document.getElementById('signupClass').value;
+                    if(!assignedClass) return this.showToast('Select assigned class', 'error');
+                }
+
+                if(role === 'Teacher' && this.state.draftSubjects.length === 0) {
+                    return this.showToast('Add at least one subject', 'error');
+                }
+
+                const newUser = {
+                    name: fullName,
+                    firstName: fname,
+                    lastName: lname,
+                    title: title,
+                    pass, 
+                    role, 
+                    assignedClass,
+                    subjects: this.state.draftSubjects
+                };
+
+                MockDB.addUser(newUser);
+                this.showToast('Account created! Please Login.', 'success');
+                this.switchAuthTab('login');
+                document.getElementById('form-signup').reset();
+                this.state.draftSubjects = [];
+                this.renderChips();
+            },
+
+            handleLogin: function(e) {
+                e.preventDefault();
+                // Retrieve values from split inputs
+                const title = document.getElementById('loginTitle').value;
+                const fname = document.getElementById('loginFirstName').value;
+                const lname = document.getElementById('loginLastName').value;
+                const pass = document.getElementById('loginPass').value;
+
+                // Construct full name to match database format
+                const fullName = `${title} ${fname} ${lname}`;
+
+                const user = MockDB.findUser(fullName, pass);
+                
+                if(user) {
+                    this.state.currentUser = user;
+                    sessionStorage.setItem('currentUser', JSON.stringify(user));
+                    this.showToast('Login Successful', 'success');
+                    setTimeout(() => this.showDashboard(), 1000);
+                } else {
+                    this.showToast('Invalid credentials', 'error');
+                }
+            },
+
+            logout: function() {
+                sessionStorage.removeItem('currentUser');
+                window.location.reload();
+            },
+
+            showDashboard: function() {
+                document.getElementById('view-auth').classList.add('hidden');
+                document.getElementById('view-dashboard').classList.remove('hidden');
+                
+                const u = this.state.currentUser;
+                document.getElementById('user-display-name').textContent = u.name;
+                document.getElementById('user-display-role').textContent = u.role + (u.assignedClass ? ` (${u.assignedClass})` : '');
+
+                this.renderClassGrid();
+                this.showView('section-classes');
+            },
+
+            // --- DASHBOARD LOGIC ---
+            showView: function(id) {
+                document.querySelectorAll('main section').forEach(s => s.classList.add('hidden'));
+                document.getElementById(id).classList.remove('hidden');
+            },
+
+            renderClassGrid: function() {
+                const grid = document.getElementById('class-grid');
+                grid.innerHTML = '';
+                const u = this.state.currentUser;
+                let visibleClasses = new Set();
+
+                // Logic 1: Admin / Head sees all
+                if (u.role === 'Admin' || u.role === 'Head') {
+                    ALL_CLASSES.forEach(c => visibleClasses.add(c));
+                } 
+                // Logic 2: Class Teacher
+                else if (u.role === 'Class Teacher') {
+                    visibleClasses.add(u.assignedClass);
+                }
+
+                // Logic 3: Subject Teacher (and Hybrid Class Teacher)
+                // We always check the subject list for extra classes
+                u.subjects.forEach(subObj => {
+                    if (subObj.class === 'ALL JSS') {
+                        visibleClasses.add('JSS1');
+                        visibleClasses.add('JSS2');
+                        visibleClasses.add('JSS3');
+                    } else if (subObj.class === 'ALL SSS') {
+                        visibleClasses.add('SSS1');
+                        visibleClasses.add('SSS2');
+                        visibleClasses.add('SSS3');
+                    } else {
+                        visibleClasses.add(subObj.class);
+                    }
+                });
+
+                // Convert Set to Array and Sort
+                const sortedClasses = Array.from(visibleClasses).sort();
+
+                sortedClasses.forEach(cls => {
+                    const count = MockDB.students.filter(s => s.class === cls).length;
+                    const isJSS = cls.startsWith('JSS');
+                    
+                    // Determine what badge to show
+                    let badgeHtml = `<span class="badge ${isJSS ? 'badge-jss' : 'badge-sss'}">${isJSS?'JSS':'SSS'}</span>`;
+                    
+                    // Add logic indicator if Hybrid
+                    // If CT and class is assignedClass -> Label "My Class"
+                    let subLabel = count + " Students";
+                    if(u.role === 'Class Teacher' && u.assignedClass === cls) {
+                        badgeHtml += ` <span class="badge" style="background:#dcfce7; color:#166534;">My Class</span>`;
+                    }
+
+                    grid.innerHTML += `
+                        <div class="card" onclick="app.loadStudentList('${cls}')">
+                            <div class="flex justify-between items-center">
+                                <h3>${cls}</h3>
+                                ${badgeHtml}
+                            </div>
+                            <p style="margin:10px 0; color:#64748b;">${subLabel}</p>
+                            <button class="btn btn-outline btn-sm w-full">Manage Class</button>
+                        </div>
+                    `;
+                });
+            },
+
+            loadStudentList: function(clsName) {
+                this.state.currentClass = clsName;
+                document.getElementById('breadcrumb-class').textContent = clsName;
+                document.getElementById('modal-dept-group').classList.toggle('hidden', !clsName.startsWith('SSS'));
+                this.filterStudents();
+                this.showView('section-students');
+            },
+
+            filterStudents: function() {
+                const query = document.getElementById('searchInput').value.toLowerCase();
+                const list = MockDB.students.filter(s => 
+                    s.class === this.state.currentClass && 
+                    (s.name.toLowerCase().includes(query) || s.id.includes(query))
+                );
+
+                const tbody = document.getElementById('student-rows');
+                tbody.innerHTML = '';
+                list.forEach(s => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${s.id}</td>
+                            <td>${s.name}</td>
+                            <td>${s.gender}</td>
+                            <td>
+                                <button class="btn btn-primary btn-sm" onclick="app.loadScoreEntry('${s.id}')">Edit Scores</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            },
+
+            // --- SCORE ENTRY LOGIC ---
+            loadScoreEntry: function(studentId) {
+                const s = MockDB.students.find(x => x.id === studentId);
+                if(!s) return;
+                this.state.currentStudent = s;
+
+                // UI Setup
+                document.getElementById('score-crumb-class').textContent = s.class;
+                document.getElementById('score-crumb-name').textContent = s.name;
+                document.getElementById('score-name').textContent = s.name;
+                document.getElementById('score-details').textContent = `Admin No: ${s.id} ${s.dept ? '| '+s.dept : ''}`;
+                document.getElementById('score-avatar').textContent = s.name.substring(0,2).toUpperCase();
+
+                // LOGIC CORE: Determine what subjects to show and if they are editable
+                const u = this.state.currentUser;
+                const isJSS = s.class.startsWith('JSS');
+                const allStandardSubjects = isJSS ? SUBJECTS.JSS : SUBJECTS.SSS;
+
+                // Is the user the Class Teacher for THIS specific class?
+                const isClassTeacherForThisClass = (u.role === 'Class Teacher' && u.assignedClass === s.class);
+                // Is the user Admin/Head?
+                const isAdmin = (u.role === 'Admin' || u.role === 'Head');
+
+                const container = document.getElementById('score-rows-container');
+                container.innerHTML = '';
+
+                allStandardSubjects.forEach(sub => {
+                    const scoreData = s.scores[sub] || { ca: '', exam: '' };
+                    const total = (parseInt(scoreData.ca)||0) + (parseInt(scoreData.exam)||0);
+
+                    // CHECK EDIT PERMISSION
+                    // 1. Admins edit everything
+                    // 2. Teachers edit ONLY if subject is in their list
+                    // 3. Class Teachers edit ONLY if subject is in their list (even if they see all subjects)
+                    
+                    const isMySubject = u.subjects.some(us => us.subject === sub);
+                    const canEdit = isAdmin || isMySubject;
+
+                    // CHECK VISIBILITY PERMISSION
+                    // 1. Admins see everything
+                    // 2. Teachers see ONLY their subjects
+                    // 3. Class Teachers see EVERYTHING (but with restricted edit)
+                    
+                    let isVisible = false;
+                    if (isAdmin) isVisible = true;
+                    else if (isClassTeacherForThisClass) isVisible = true; // CT sees all in their class
+                    else if (isMySubject) isVisible = true; // Regular teacher sees only their subjects
+
+                    if (!isVisible) return; // Skip this subject entirely
+
+                    const readonlyAttr = canEdit ? '' : 'disabled';
+                    const readonlyLabel = !canEdit ? '<span class="readonly-badge">Read-only</span>' : '';
+
+                    container.innerHTML += `
+                        <div class="score-row">
+                            <div class="subject-label">${sub} ${readonlyLabel}</div>
+                            <div><input type="number" min="0" max="40" class="score-input input-ca" data-sub="${sub}" value="${scoreData.ca}" ${readonlyAttr}></div>
+                            <div><input type="number" min="0" max="60" class="score-input input-exam" data-sub="${sub}" value="${scoreData.exam}" ${readonlyAttr}></div>
+                            <div style="font-weight:bold; text-align:center;">${total || '-'}</div>
+                        </div>
+                    `;
+                });
+
+                // Auto-calc listener
+                document.querySelectorAll('.score-input').forEach(inp => {
+                    inp.addEventListener('input', (e) => {
+                        const row = e.target.closest('.score-row');
+                        const ca = parseInt(row.querySelector('.input-ca').value) || 0;
+                        const ex = parseInt(row.querySelector('.input-exam').value) || 0;
+                        row.lastElementChild.textContent = ca + ex;
+                    });
+                });
+
+                this.showView('section-scores');
+            },
+
+            saveScores: function(e) {
+                e.preventDefault();
+                const u = this.state.currentUser;
+                const isAdmin = (u.role === 'Admin' || u.role === 'Head');
+                
+                // Backend Enforced Permission Check (Simulation)
+                const updates = {};
+                const rows = document.querySelectorAll('.score-row');
+                
+                rows.forEach(row => {
+                    // Extract subject name, removing the badge text if present
+                    const labelDiv = row.querySelector('.subject-label');
+                    const sub = labelDiv.firstChild.textContent.trim(); 
+                    const ca = row.querySelector('.input-ca').value;
+                    const ex = row.querySelector('.input-exam').value;
+                    
+                    // Verify permission strictly based on User's Subject List
+                    const isMySubject = u.subjects.some(s => s.subject === sub);
+
+                    if(isAdmin || isMySubject) {
+                        updates[sub] = { ca: parseInt(ca)||0, exam: parseInt(ex)||0 };
+                    }
+                });
+
+                MockDB.updateStudentScores(this.state.currentStudent.id, updates);
+                this.showToast('Results Saved Successfully', 'success');
+            },
+
+            backToStudents: function() {
+                this.showView('section-students');
+            },
+
+            // --- MODALS & ACTIONS ---
+            openAddStudentModal: function() {
+                document.getElementById('modal-add-student').style.display = 'flex';
+            },
+
+            addStudent: function() {
+                const name = document.getElementById('newStdName').value;
+                const id = document.getElementById('newStdId').value;
+                const gender = document.getElementById('newStdGender').value;
+                const dept = document.getElementById('newStdDept').value;
+
+                if(!name || !id) return this.showToast('Fill required fields', 'error');
+
+                const newS = {
+                    id, name, gender, 
+                    class: this.state.currentClass,
+                    dept: this.state.currentClass.startsWith('SSS') ? dept : '',
+                    scores: {}
+                };
+
+                MockDB.addStudent(newS);
+                this.filterStudents(); // refresh list
+                this.closeModals();
+                this.showToast('Student Added', 'success');
+            },
+
+            openPrintModal: function() {
+                document.getElementById('modal-print').style.display = 'flex';
+            },
+
+            generateReport: function() {
+                const s = this.state.currentStudent;
+                
+                // Fill Header
+                document.getElementById('p-name').textContent = s.name;
+                document.getElementById('p-class').textContent = s.class;
+                document.getElementById('p-session').textContent = document.getElementById('printSession').value + ' | ' + document.getElementById('printTerm').value;
+                document.getElementById('p-comment').textContent = document.getElementById('printComment').value;
+
+                // Fill Table - Reuse visibility logic from loadScoreEntry
+                const u = this.state.currentUser;
+                const isJSS = s.class.startsWith('JSS');
+                const allStandardSubjects = isJSS ? SUBJECTS.JSS : SUBJECTS.SSS;
+                const isClassTeacherForThisClass = (u.role === 'Class Teacher' && u.assignedClass === s.class);
+                const isAdmin = (u.role === 'Admin' || u.role === 'Head');
+
+                const tbody = document.getElementById('p-body');
+                tbody.innerHTML = '';
+
+                allStandardSubjects.forEach(sub => {
+                    // Check visibility same as screen
+                    const isMySubject = u.subjects.some(us => us.subject === sub);
+                    let isVisible = false;
+                    if (isAdmin) isVisible = true;
+                    else if (isClassTeacherForThisClass) isVisible = true;
+                    else if (isMySubject) isVisible = true;
+
+                    if (!isVisible) return;
+
+                    const score = s.scores[sub] || {ca:0, exam:0};
+                    const total = score.ca + score.exam;
+                    const grade = this.calcGrade(total);
+                    const remark = this.calcRemark(grade);
+                    
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${sub}</td>
+                            <td>${score.ca}</td>
+                            <td>${score.exam}</td>
+                            <td>${total}</td>
+                            <td>${grade}</td>
+                            <td>${remark}</td>
+                        </tr>
+                    `;
+                });
+
+                this.closeModals();
+                window.print();
+            },
+
+            calcGrade: function(score) {
+                if(score >= 75) return 'A1';
+                if(score >= 70) return 'B2';
+                if(score >= 65) return 'B3';
+                if(score >= 60) return 'C4';
+                if(score >= 55) return 'C5';
+                if(score >= 50) return 'C6';
+                if(score >= 45) return 'D7';
+                if(score >= 40) return 'E8';
+                return 'F9';
+            },
+
+            calcRemark: function(g) {
+                if(g.startsWith('A')) return 'Excellent';
+                if(g.startsWith('B')) return 'Very Good';
+                if(g.startsWith('C')) return 'Good';
+                if(g.startsWith('D') || g.startsWith('E')) return 'Pass';
+                return 'Fail';
+            },
+
+            closeModals: function() {
+                document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none');
+            },
+
+            showToast: function(msg, type) {
+                const t = document.getElementById('toast');
+                document.getElementById('toast-msg').textContent = msg;
+                t.className = `toast ${type} show`;
+                setTimeout(() => t.classList.remove('show'), 3000);
+            }
+        };
+
+        // Start App
+        document.addEventListener('DOMContentLoaded', () => {
+            app.init();
+        });
+    </script>
+</body>
+</html>
