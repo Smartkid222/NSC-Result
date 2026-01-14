@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Primary School Manager (Local Storage)</title>
+    <style>
+        /* --- CORE VARIABLES & RESET --- */
+        :root {
+            /* Primary School Palette: Friendly and Trustworthy */
+            --primary: #0ea5e9;       /* Sky Blue */
+            --primary-dark: #0284c7;
+            --secondary: #64748b;
+            --bg: #f0f9ff;           /* Very light blue tint */
+            --surface: #ffffff;
+            --text: #0f172a;
+            --border: #cbd5e1;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            --radius: 12px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+        body { font-family: 'Segoe UI', Roboto, sans-serif; background-color: var(--bg); color: var(--text); line-height: 1.6; min-height: 100vh; }
+        
+        /* --- UTILITIES --- */
+        .hidden { display: none !important; }
+        .flex { display: flex; }
+        .flex-col { flex-direction: column; }
+        .items-center { align-items: center; }
+        .justify-between { justify-content: space-between; }
+        .gap-2 { gap: 0.5rem; }
+        .gap-4 { gap: 1rem; }
+        .text-sm { font-size: 0.875rem; }
+        .font-bold { font-weight: 700; }
+        .w-full { width: 100%; }
+        .text-center { text-align: center; }
+        
+        /* --- BUTTONS --- */
+        .btn { padding: 0.75rem 1.5rem; border: none; border-radius: var(--radius); cursor: pointer; font-weight: 600; transition: all 0.2s; font-size: 0.95rem; display: inline-flex; align-items: center; justify-content: center; gap: 8px;}
+        .btn:active { transform: scale(0.98); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .btn-primary { background-color: var(--primary); color: white; box-shadow: 0 4px 10px rgba(14, 165, 233, 0.3); }
+        .btn-primary:hover { background-color: var(--primary-dark); }
+        .btn-outline { background-color: transparent; border: 2px solid var(--primary); color: var(--primary); }
+        .btn-outline:hover { background-color: #f0f9ff; }
+        .btn-danger { background-color: var(--danger); color: white; }
+        .btn-sm { padding: 0.5rem 1rem; font-size: 0.85rem; border-radius: 8px; }
+
+        /* --- LOADING OVERLAY --- */
+        .loader-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(5px);
+            display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 9999;
+        }
+        .spinner {
+            width: 50px; height: 50px; border: 5px solid var(--border);
+            border-top: 5px solid var(--primary); border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* --- AUTH VIEW --- */
+        .auth-wrapper {
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+            min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px;
+        }
+        .auth-container {
+            background: white; width: 100%; max-width: 450px;
+            border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            overflow: hidden; animation: slideUp 0.4s ease;
+        }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .auth-header { text-align: center; padding: 30px 20px 10px; background: #fff; }
+        .app-title { font-size: 1.8rem; font-weight: 800; color: var(--primary-dark); margin-bottom: 5px; }
+        .tabs { display: flex; border-bottom: 2px solid #e2e8f0; }
+        .tab-btn { flex: 1; padding: 15px; border: none; background: transparent; cursor: pointer; font-weight: 600; color: var(--secondary); }
+        .tab-btn.active { color: var(--primary); border-bottom: 3px solid var(--primary); }
+        .forms-wrapper { padding: 30px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 8px; font-size: 0.9rem; color: #475569; font-weight: 600; }
+        .form-control { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: var(--radius); font-size: 1rem; transition: border 0.3s; }
+        .form-control:focus { border-color: var(--primary); background-color: #f8fafc; }
+
+        /* --- DASHBOARD --- */
+        header { background: var(--surface); padding: 1rem 2rem; box-shadow: var(--shadow); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+        .logo { font-size: 1.5rem; font-weight: 800; color: var(--primary); display: flex; align-items: center; gap: 10px; }
+        .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
+
+        /* Cards */
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 25px; }
+        
+        .card { 
+            background: var(--surface); 
+            border-radius: 16px; 
+            padding: 25px; 
+            box-shadow: var(--shadow); 
+            border: 1px solid white; 
+            transition: transform 0.2s, box-shadow 0.2s; 
+            display: flex; 
+            flex-direction: column; 
+            cursor: pointer;
+            position: relative;
+            overflow: hidden; /* Contains content */
+        }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-color: var(--primary); }
+        
+        .card-content {
+            flex-grow: 1; /* Takes up available space */
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+
+        .card-icon { font-size: 2.5rem; margin-bottom: 5px; }
+        .card-title { font-size: 1.25rem; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+        .card-meta { font-size: 0.9rem; color: var(--secondary); line-height: 1.3; }
+
+        .card-footer {
+            margin-top: auto; /* Pushes footer to bottom */
+            z-index: 2; /* Ensures it sits above content */
+            position: relative;
+        }
+
+        .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; background: #e0f2fe; color: var(--primary-dark); }
+
+        /* Tables & Lists */
+        .list-container { background: var(--surface); border-radius: 16px; box-shadow: var(--shadow); overflow: hidden; }
+        .list-header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; background: #f8fafc; }
+        .search-input { padding: 10px 15px; border: 1px solid var(--border); border-radius: 20px; width: 250px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 15px 20px; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: #f1f5f9; font-weight: 600; color: var(--secondary); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.05em; }
+        tr:hover { background-color: #f8fafc; }
+
+        /* Score Entry */
+        .score-grid { display: grid; grid-template-columns: 3fr 1fr 1fr 1fr; gap: 10px; padding: 15px; border-bottom: 1px solid #f1f5f9; align-items: center; }
+        .score-label { font-weight: 600; }
+        .score-input { width: 100%; padding: 10px; text-align: center; border: 1px solid var(--border); border-radius: 8px; font-weight: bold; }
+        .score-input:focus { border-color: var(--primary); outline: none; background-color: #fff; }
+        .total-score { text-align: center; font-weight: 800; color: var(--primary-dark); font-size: 1.1rem; }
+
+        /* Modals */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(2px); }
+        .modal { background: white; width: 90%; max-width: 500px; border-radius: 16px; padding: 30px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); animation: slideUp 0.3s ease; }
+        .modal h3 { margin-bottom: 20px; color: var(--primary-dark); }
+
+        /* Toast */
+        .toast { position: fixed; bottom: 30px; right: 30px; padding: 15px 25px; border-radius: 12px; color: white; font-weight: 600; transform: translateY(100px); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 2000; display: flex; align-items: center; gap: 10px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        .toast.show { transform: translateY(0); }
+        .toast.success { background-color: var(--success); }
+        .toast.error { background-color: var(--danger); }
+
+        /* Breadcrumbs */
+        .breadcrumbs { font-size: 0.95rem; color: var(--secondary); margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+        .breadcrumbs span { cursor: pointer; transition: color 0.2s; }
+        .breadcrumbs span:hover { color: var(--primary); text-decoration: underline; }
+        .breadcrumbs span:last-child { cursor: default; color: var(--text); font-weight: 700; text-decoration: none; }
+
+        /* Print Styles */
+        #printable-area { display: none; }
+        @media print {
+            body * { visibility: hidden; }
+            #printable-area, #printable-area * { visibility: visible; }
+            #printable-area { display: block; position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; background: white; }
+            
+            /* Report Card Design */
+            .report-card { font-family: 'Times New Roman', serif; padding: 20px; color: #000; max-width: 100%; }
+            .rc-header { text-align: center; border-bottom: 3px double #000; margin-bottom: 20px; padding-bottom: 10px; }
+            .rc-title { font-size: 24pt; font-weight: bold; text-transform: uppercase; margin: 0; }
+            .rc-subtitle { font-size: 14pt; margin: 5px 0; font-weight: bold; }
+            
+            .rc-info-row { display: flex; justify-content: space-between; border: 1px solid #000; padding: 10px; margin-bottom: 20px; font-size: 12pt; }
+            
+            .rc-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 11pt; }
+            .rc-table th, .rc-table td { border: 1px solid #000; padding: 5px; text-align: center; }
+            .rc-table th { background-color: #f0f0f0 !important; -webkit-print-color-adjust: exact; }
+
+            .rc-footer { display: flex; justify-content: space-between; margin-top: 50px; }
+            .rc-signature { text-align: center; width: 30%; }
+            .signature-line { border-bottom: 1px solid #000; height: 50px; margin-bottom: 5px; }
+        }
+
+        /* --- MOBILE RESPONSIVENESS --- */
+        @media (max-width: 768px) {
+            .auth-container { max-width: 100%; border-radius: 0; min-height: 100vh; }
+            .score-grid { grid-template-columns: 1fr 1fr; gap: 5px; padding: 10px 0; }
+            .score-label { grid-column: 1 / -1; background: #f1f5f9; padding: 5px; border-radius: 4px; }
+            header { padding: 1rem; flex-direction: column; gap: 10px; text-align: center; }
+            .list-header { flex-direction: column; align-items: stretch; }
+            .search-input { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- GLOBAL LOADER -->
+    <div id="loader" class="loader-overlay">
+        <div class="spinner"></div>
+        <p style="margin-top:15px; font-weight:600; color:var(--primary-dark);">Processing...</p>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="toast"></div>
+
+    <!-- ================= AUTH VIEW ================= -->
+    <div id="view-auth" class="auth-wrapper">
+        <div class="auth-container">
+            <div class="auth-header">
+                <div class="app-title">🎓 Primary Teacher Portal</div>
+                <p class="text-secondary" style="margin-bottom: 20px;">Secure Result Management System</p>
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="app.switchAuth('login')">Login</button>
+                    <button class="tab-btn" onclick="app.switchAuth('signup')">Create Account</button>
+                </div>
+            </div>
+
+            <div class="forms-wrapper">
+                <!-- LOGIN FORM -->
+                <form id="form-login" onsubmit="app.handleLogin(event)">
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input type="email" id="loginEmail" class="form-control" placeholder="teacher@school.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="loginPass" class="form-control" placeholder="•••••••" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-full">Access Dashboard</button>
+                    <p class="text-center text-sm" style="margin-top:15px; color:var(--secondary);">
+                        Demo: <b>admin@school.com</b> / <b>12345</b>
+                    </p>
+                </form>
+
+                <!-- SIGNUP FORM -->
+                <form id="form-signup" class="hidden" onsubmit="app.handleSignup(event)">
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" id="signupName" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Role</label>
+                        <select id="signupRole" class="form-control" onchange="app.handleRoleChange()">
+                            <option value="Class Teacher">Class Teacher</option>
+                            <option value="Admin">Admin</option>
+                            <option value="Head Teacher">Head Teacher</option>
+                        </select>
+                    </div>
+                    <div id="class-select-group" class="form-group">
+                        <label>Assigned Class</label>
+                        <select id="signupClass" class="form-control">
+                            <option value="" disabled selected>Select Class</option>
+                            <!-- Populated via JS -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Create Password</label>
+                        <input type="password" id="signupPass" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-full">Create Account</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= DASHBOARD VIEW ================= -->
+    <div id="view-dashboard" class="hidden">
+        <header>
+            <div class="logo">
+                <div style="background:var(--primary); width:40px; height:40px; border-radius:8px; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold;">PS</div>
+                <div>
+                    <div style="line-height:1; font-size:1.2rem;">Nifty Steps</div>
+                    <div style="font-size:0.7rem; color:var(--secondary); letter-spacing:1px; font-weight:bold;">PRIMARY SCHOOL</div>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="text-right hidden-mobile">
+                    <div id="user-name" class="font-bold">User Name</div>
+                    <div id="user-role" class="text-sm text-secondary" style="font-size:0.8rem;">Role</div>
+                </div>
+                <button class="btn btn-outline btn-sm" onclick="app.logout()">Logout</button>
+            </div>
+        </header>
+
+        <main class="container">
+            
+            <!-- 1. LANDING (CLASS SELECTION) -->
+            <section id="section-landing">
+                <h2 style="margin-bottom:20px; color:var(--text);">Welcome Back! 👋</h2>
+                <div class="dashboard-grid" id="class-grid">
+                    <!-- Cards injected via JS -->
+                </div>
+            </section>
+
+            <!-- 2. STUDENT LIST -->
+            <section id="section-students" class="hidden">
+                <div class="breadcrumbs">
+                    <span onclick="app.goHome()">Home</span> > <span id="crumb-class-name" class="font-bold"></span>
+                </div>
+                <div class="list-container">
+                    <div class="list-header">
+                        <div>
+                            <h2 id="list-title">Students</h2>
+                            <span id="student-count" class="badge">0 Students</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <input type="text" id="searchStudent" class="search-input" placeholder="Search name or ID..." onkeyup="app.filterStudents()">
+                            <button class="btn btn-primary btn-sm" onclick="app.openAddStudentModal()">+ Add Student</button>
+                        </div>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table id="students-table">
+                            <thead>
+                                <tr>
+                                    <th>Adm No</th>
+                                    <th>Student Name</th>
+                                    <th>Gender</th>
+                                    <th style="text-align:right;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="students-tbody">
+                                <!-- Rows injected via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. SCORE ENTRY -->
+            <section id="section-scores" class="hidden">
+                <div class="breadcrumbs">
+                    <span onclick="app.goHome()">Home</span> > 
+                    <span onclick="app.backToClass()" id="crumb-back-class">Class</span> > 
+                    <span id="crumb-student-name" class="font-bold"></span>
+                </div>
+
+                <div class="list-container" style="padding: 20px;">
+                    <div class="flex justify-between items-center" style="margin-bottom: 20px;">
+                        <div>
+                            <h2>Score Entry</h2>
+                            <p class="text-secondary" id="score-subtitle">Subject Assessment</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button class="btn btn-outline" onclick="app.openPrintModal()">🖨️ Print Result</button>
+                            <button class="btn btn-primary" onclick="app.saveScores()">💾 Save Scores</button>
+                        </div>
+                    </div>
+
+                    <form id="score-form">
+                        <div style="background: #f1f5f9; padding: 10px; border-radius: 8px; font-weight: bold; color: var(--secondary); display: grid; grid-template-columns: 3fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                            <div>Subject</div>
+                            <div style="text-align:center;">CA (40)</div>
+                            <div style="text-align:center;">Exam (60)</div>
+                            <div style="text-align:center;">Total</div>
+                        </div>
+                        <div id="score-rows-container">
+                            <!-- Score rows injected via JS -->
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- ================= MODALS ================= -->
+    
+    <!-- Add Student Modal -->
+    <div id="modal-add-student" class="modal-overlay">
+        <div class="modal">
+            <h3>Register New Student</h3>
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" id="newStdName" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Admission Number</label>
+                <input type="text" id="newStdId" class="form-control">
+            </div>
+            <div class="flex gap-4">
+                <div class="form-group w-full">
+                    <label>Gender</label>
+                    <select id="newStdGender" class="form-control">
+                        <option>Male</option>
+                        <option>Female</option>
+                    </select>
+                </div>
+                <!-- Admin Only: Can move students between classes -->
+                <div id="modal-class-group" class="form-group w-full hidden">
+                    <label>Class</label>
+                    <select id="newStdClass" class="form-control"></select>
+                </div>
+            </div>
+            <div class="flex justify-between" style="margin-top:20px;">
+                <button class="btn btn-outline" onclick="app.closeModals()">Cancel</button>
+                <button class="btn btn-primary" onclick="app.confirmAddStudent()">Save Student</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Print Modal -->
+    <div id="modal-print" class="modal-overlay">
+        <div class="modal">
+            <h3>Print Report Card</h3>
+            <div class="form-group">
+                <label>Academic Session</label>
+                <input type="text" id="printSession" value="2024/2025" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Term</label>
+                <select id="printTerm" class="form-control">
+                    <option>First Term</option>
+                    <option>Second Term</option>
+                    <option>Third Term</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Next Term Begins:</label>
+                <input type="date" id="printNextTerm" class="form-control">
+            </div>
+            <div class="flex justify-between" style="margin-top:20px;">
+                <button class="btn btn-outline" onclick="app.closeModals()">Cancel</button>
+                <button class="btn btn-primary" onclick="app.executePrint()">Print Preview</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Printable Area -->
+    <div id="printable-area"></div>
+
+    <!-- ================= JAVASCRIPT LOGIC ================= -->
+    <script>
+        /* --- 1. CONFIGURATION & DATA --- */
+        
+        // Class Lists
+        const CLASSES = [
+            'Playgroup', 'Nursery 1', 'Nursery 2', 'KG', 
+            'Primary 1A', 'Primary 1B', 'Primary 2A', 'Primary 2B', 
+            'Primary 3A', 'Primary 3B', 'Primary 4A', 'Primary 4B', 
+            'Primary 5A', 'Primary 5B'
+        ];
+
+        // Subjects Definition
+        const SUBJECTS = {
+            'Playgroup': [
+                'Language Art', 'Number Concept', 'Creative Arts & Craft', 
+                'Physical Health Edu', 'Story', 'Songs & Rhymes', 
+                'Practical Life', 'Basic Science', 'Bible/CRK', 
+                'Sensorial Activities', 'ICT', 'Social Skills'
+            ],
+            'Nursery': [
+                'Language Development', 'Number Work', 'Phonics', 
+                'Handwriting', 'Basic Science', 'Social Habits', 
+                'Health Habits', 'Creative Art', 'Rhymes', 'CRK', 'ICT'
+            ],
+            'KG': [
+                'English Language', 'Mathematics', 'Phonics', 
+                'Basic Science', 'Social Studies', 'Health Habits', 
+                'Creative Art', 'Writing', 'Quantitative Reasoning', 
+                'Verbal Reasoning', 'CRK', 'Music', 'French'
+            ],
+            'Primary': [ // Primary 1-5
+                'English Language', 'Mathematics', 'Basic Science & Tech', 
+                'Information Tech', 'Social Studies', 'Civic Education', 
+                'Cultural & Creative Art', 'Physical Health Edu', 
+                'Religion & Nat. Values', 'Yoruba', 'French', 
+                'Handwriting', 'Verbal Reasoning', 'Quantitative Reasoning',
+                'Agricultural Science', 'Home Economics'
+            ]
+        };
+
+        // --- 2. LOCAL STORAGE DATABASE SERVICE ---
+        
+        const LocalDB = {
+            KEYS: {
+                USERS: 'ps_users_v1',
+                STUDENTS: 'ps_students_v1'
+            },
+
+            // Initialize Default Data if empty
+            init: function() {
+                if (!localStorage.getItem(this.KEYS.USERS)) {
+                    const defaultUsers = [
+                        { email: 'admin@school.com', pass: '12345', name: 'Mr. Administrator', role: 'Admin', assignedClass: '' },
+                        { email: 'teacher@school.com', pass: '12345', name: 'Mrs. Johnson', role: 'Class Teacher', assignedClass: 'Primary 1A' }
+                    ];
+                    localStorage.setItem(this.KEYS.USERS, JSON.stringify(defaultUsers));
+                }
+
+                if (!localStorage.getItem(this.KEYS.STUDENTS)) {
+                    const defaultStudents = [
+                        { id: 'P001', name: 'Adeyemi David', gender: 'Male', class: 'Primary 1A', scores: {} },
+                        { id: 'P002', name: 'Bello Fatima', gender: 'Female', class: 'Primary 1A', scores: {} },
+                        { id: 'P003', name: 'Chike Emeka', gender: 'Male', class: 'Primary 1B', scores: {} },
+                        { id: 'PG01', name: 'Baby Sophia', gender: 'Female', class: 'Playgroup', scores: {} }
+                    ];
+                    localStorage.setItem(this.KEYS.STUDENTS, JSON.stringify(defaultStudents));
+                }
+            },
+
+            getUsers: function() {
+                return JSON.parse(localStorage.getItem(this.KEYS.USERS) || '[]');
+            },
+
+            addUser: function(userObj) {
+                const users = this.getUsers();
+                users.push(userObj);
+                localStorage.setItem(this.KEYS.USERS, JSON.stringify(users));
+            },
+
+            getStudents: function() {
+                return JSON.parse(localStorage.getItem(this.KEYS.STUDENTS) || '[]');
+            },
+
+            addStudent: function(studentObj) {
+                const students = this.getStudents();
+                students.push(studentObj);
+                localStorage.setItem(this.KEYS.STUDENTS, JSON.stringify(students));
+            },
+
+            updateStudentScores: function(adminNo, scoresObj) {
+                const students = this.getStudents();
+                const index = students.findIndex(s => s.id === adminNo);
+                if (index !== -1) {
+                    // Merge scores (overwrite existing, keep new ones)
+                    students[index].scores = { ...students[index].scores, ...scoresObj };
+                    localStorage.setItem(this.KEYS.STUDENTS, JSON.stringify(students));
+                    return true;
+                }
+                return false;
+            },
+
+            // Utility: Reset data (for debugging)
+            reset: function() {
+                localStorage.removeItem(this.KEYS.USERS);
+                localStorage.removeItem(this.KEYS.STUDENTS);
+                location.reload();
+            }
+        };
+
+        /* --- UPDATED DATA SERVICE (API VERSION) --- */
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyoLN0o6qPU7waz6J9-KpNILcXXJtyFMjt_b44l7MoFUFVAaVRYOyLTEoUSWWCnycFW/exec';
+
+        const DataService = {
+            async _call(payload) {
+                const response = await fetch(SCRIPT_URL, {
+                    method: "POST",
+                    body: JSON.stringify(payload)
+                });
+                return await response.json();
+            },
+
+            async login(email, password) {
+                return await this._call({ action: 'login', email, pass: password });
+            },
+            async signup(userObj) {
+                return await this._call({ ...userObj, action: 'signup' });
+            },
+
+            async getStudents(className) {
+                // Returns filtered list based on class
+                return await this._call({ action: 'getStudents', className });
+            },
+
+            async addStudent(studentData) {
+                return await this._call({ ...studentData, action: 'addStudent' });
+            },
+
+            async saveScores(adminNo, scoresObj) {
+                return await this._call({ action: 'saveScores', adminNo, scores: scoresObj });
+            }
+        };
+
+        // --- 4. APP CONTROLLER ---
+
+        const app = {
+            state: {
+                currentUser: null,
+                currentClass: null,
+                currentStudent: null
+            },
+
+            init: function() {
+                // Initialize Local Storage
+                LocalDB.init();
+
+                // Populate class selects
+                const populateSelect = (id) => {
+                    const sel = document.getElementById(id);
+                    if(!sel) return;
+                    sel.innerHTML = '<option value="" disabled selected>Select</option>';
+                    CLASSES.forEach(c => sel.innerHTML += `<option value="${c}">${c}</option>`);
+                };
+                populateSelect('signupClass');
+                populateSelect('newStdClass');
+
+                // Check Session
+                const savedUser = sessionStorage.getItem('ps_user');
+                if (savedUser) {
+                    this.state.currentUser = JSON.parse(savedUser);
+                    this.showDashboard();
+                }
+            },
+
+            /* --- AUTH --- */
+            switchAuth: function(mode) {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                event.target.classList.add('active');
+                document.getElementById('form-login').classList.toggle('hidden', mode !== 'login');
+                document.getElementById('form-signup').classList.toggle('hidden', mode !== 'signup');
+            },
+
+            handleRoleChange: function() {
+                const role = document.getElementById('signupRole').value;
+                document.getElementById('class-select-group').style.display = (role === 'Class Teacher') ? 'block' : 'none';
+            },
+
+            handleLogin: async function(e) {
+                e.preventDefault();
+                const email = document.getElementById('loginEmail').value;
+                const pass = document.getElementById('loginPass').value;
+
+                this.toggleLoader(true);
+                const res = await DataService.login(email, pass);
+                this.toggleLoader(false);
+
+                if (res.status === 'success') {
+                    this.state.currentUser = res.user;
+                    sessionStorage.setItem('ps_user', JSON.stringify(res.user));
+                    this.showDashboard();
+                } else {
+                    this.showToast('Login Failed: ' + res.message, 'error');
+                }
+            },
+
+            handleSignup: async function(e) {
+                e.preventDefault();
+                const name = document.getElementById('signupName').value;
+                const role = document.getElementById('signupRole').value;
+                const pass = document.getElementById('signupPass').value;
+                let cls = document.getElementById('signupClass').value;
+
+                if (role === 'Class Teacher' && !cls) return this.showToast('Please select a class', 'warning');
+
+                const newUser = {
+                    name,
+                    email: name.toLowerCase().replace(/\s/g, '.') + '@school.com', // Auto generate email
+                    pass,
+                    role,
+                    assignedClass: role === 'Class Teacher' ? cls : ''
+                };
+
+                this.toggleLoader(true);
+                await DataService.signup(newUser);
+                this.toggleLoader(false);
+
+                this.showToast('Account created! Please login.', 'success');
+                this.switchAuth('login');
+            },
+
+            logout: function() {
+                sessionStorage.removeItem('ps_user');
+                window.location.reload();
+            },
+
+            /* --- DASHBOARD --- */
+            showDashboard: function() {
+                document.getElementById('view-auth').classList.add('hidden');
+                document.getElementById('view-dashboard').classList.remove('hidden');
+                document.getElementById('user-name').textContent = this.state.currentUser.name;
+                document.getElementById('user-role').textContent = this.state.currentUser.role;
+                this.renderClassGrid();
+            },
+
+            renderClassGrid: function() {
+                const grid = document.getElementById('class-grid');
+                grid.innerHTML = '';
+                
+                let classesToShow = [];
+
+                if (this.state.currentUser.role === 'Class Teacher') {
+                    classesToShow = [this.state.currentUser.assignedClass];
+                } else {
+                    classesToShow = CLASSES;
+                }
+
+                classesToShow.forEach(cls => {
+                    grid.innerHTML += `
+                        <div class="card" onclick="app.loadStudentList('${cls}')">
+                            <div class="card-content">
+                                <div class="card-icon">🏫</div>
+                                <div class="card-title">${cls}</div>
+                                <div class="card-meta">Class Teacher: ${this.getClassTeacherName(cls)}</div>
+                            </div>
+                            <div class="card-footer">
+                                <button class="btn btn-outline btn-sm w-full">Manage</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            },
+
+            getClassTeacherName: function(cls) {
+                if (this.state.currentUser.role === 'Class Teacher' && this.state.currentUser.assignedClass === cls) {
+                    return this.state.currentUser.name;
+                }
+                return cls === 'Primary 1A' ? 'Mrs. Johnson' : 'Not Assigned';
+            },
+
+            /* --- STUDENT LIST --- */
+            loadStudentList: async function(clsName) {
+                this.state.currentClass = clsName;
+                document.getElementById('crumb-class-name').textContent = clsName;
+                document.getElementById('list-title').textContent = `${clsName} Students`;
+                
+                this.showSection('section-students');
+                this.toggleLoader(true);
+
+                const students = await DataService.getStudents(clsName);
+                this.toggleLoader(false);
+
+                this.renderStudentTable(students);
+            },
+
+            renderStudentTable: function(students) {
+                document.getElementById('student-count').textContent = `${students.length} Students`;
+                const tbody = document.getElementById('students-tbody');
+                tbody.innerHTML = '';
+
+                if (students.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-secondary">No students found in this class.</td></tr>';
+                    return;
+                }
+
+                students.forEach(s => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td><b>${s.id}</b></td>
+                            <td>${s.name}</td>
+                            <td><span class="badge" style="background:${s.gender==='Male'?'#e0f2fe':'#fce7f3'}; color:${s.gender==='Male'?'#0369a1':'#be185d'}">${s.gender}</span></td>
+                            <td style="text-align:right;">
+                                <button class="btn btn-primary btn-sm" onclick="app.loadScoreEntry('${s.id}')">Enter Scores</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            },
+
+            filterStudents: function() {
+                const q = document.getElementById('searchStudent').value.toLowerCase();
+                const rows = document.querySelectorAll('#students-tbody tr');
+                rows.forEach(r => {
+                    r.style.display = r.innerText.toLowerCase().includes(q) ? '' : 'none';
+                });
+            },
+
+            /* --- SCORE ENTRY --- */
+            loadScoreEntry: async function(studentId) {
+                const students = await DataService.getStudents(this.state.currentClass);
+                const student = students.find(s => s.id === studentId);
+                
+                if (!student) return this.showToast('Student not found', 'error');
+
+                this.state.currentStudent = student;
+                
+                document.getElementById('crumb-back-class').textContent = this.state.currentClass;
+                document.getElementById('crumb-student-name').textContent = student.name;
+                document.getElementById('score-subtitle').textContent = `Assessment for ${student.name} (${student.id})`;
+
+                this.showSection('section-scores');
+                this.generateScoreForm(student);
+            },
+
+            generateScoreForm: function(student) {
+                const container = document.getElementById('score-rows-container');
+                container.innerHTML = '';
+
+                // Determine Subject List based on Class
+                let subjectList = [];
+                const cls = student.class;
+                
+                if (cls.startsWith('Playgroup')) subjectList = SUBJECTS['Playgroup'];
+                else if (cls.startsWith('Nursery')) subjectList = SUBJECTS['Nursery'];
+                else if (cls.startsWith('KG')) subjectList = SUBJECTS['KG'];
+                else subjectList = SUBJECTS['Primary'];
+
+                subjectList.forEach(sub => {
+                    const existingScore = student.scores[sub] || { ca: '', exam: '' };
+                    const total = (parseInt(existingScore.ca) || 0) + (parseInt(existingScore.exam) || 0);
+
+                    container.innerHTML += `
+                        <div class="score-grid">
+                            <div class="score-label">${sub}</div>
+                            <input type="number" min="0" max="40" class="score-input input-ca" placeholder="CA" value="${existingScore.ca}" oninput="app.calcRowTotal(this)">
+                            <input type="number" min="0" max="60" class="score-input input-exam" placeholder="Exam" value="${existingScore.exam}" oninput="app.calcRowTotal(this)">
+                            <div class="total-score">${total}</div>
+                        </div>
+                    `;
+                });
+            },
+
+            calcRowTotal: function(input) {
+                const row = input.closest('.score-grid');
+                const ca = parseInt(row.querySelector('.input-ca').value) || 0;
+                const ex = parseInt(row.querySelector('.input-exam').value) || 0;
+                row.querySelector('.total-score').textContent = ca + ex;
+            },
+
+            saveScores: async function() {
+                if (!confirm("Are you sure you want to save these scores?")) return;
+
+                const rows = document.querySelectorAll('.score-grid');
+                const scoresUpdate = {};
+                
+                // Map rows to subjects
+                let subjectList = [];
+                const cls = this.state.currentStudent.class;
+                if (cls.startsWith('Playgroup')) subjectList = SUBJECTS['Playgroup'];
+                else if (cls.startsWith('Nursery')) subjectList = SUBJECTS['Nursery'];
+                else if (cls.startsWith('KG')) subjectList = SUBJECTS['KG'];
+                else subjectList = SUBJECTS['Primary'];
+
+                rows.forEach((row, index) => {
+                    const ca = row.querySelector('.input-ca').value;
+                    const ex = row.querySelector('.input-exam').value;
+                    // Only save if there is data
+                    if (ca !== '' || ex !== '') {
+                        scoresUpdate[subjectList[index]] = { ca: parseInt(ca) || 0, exam: parseInt(ex) || 0 };
+                    }
+                });
+
+                this.toggleLoader(true);
+                const res = await DataService.saveScores(this.state.currentStudent.id, scoresUpdate);
+                this.toggleLoader(false);
+
+                if (res.status === 'success') {
+                    this.showToast('Scores saved successfully!', 'success');
+                } else {
+                    this.showToast('Error saving scores', 'error');
+                }
+            },
+
+            /* --- ACTIONS & UTILS --- */
+            openAddStudentModal: function() {
+                const modalClassGroup = document.getElementById('modal-class-group');
+                if (this.state.currentUser.role === 'Admin') {
+                    modalClassGroup.classList.remove('hidden');
+                    modalClassGroup.classList.add('flex');
+                } else {
+                    modalClassGroup.classList.add('hidden');
+                    document.getElementById('newStdClass').value = this.state.currentClass;
+                }
+                document.getElementById('modal-add-student').style.display = 'flex';
+            },
+
+            confirmAddStudent: async function() {
+                const name = document.getElementById('newStdName').value;
+                const id = document.getElementById('newStdId').value;
+                const gender = document.getElementById('newStdGender').value;
+                let cls = document.getElementById('newStdClass').value;
+
+                if (!name || !id) return this.showToast('Please fill all fields', 'warning');
+                if (this.state.currentUser.role !== 'Admin') cls = this.state.currentClass;
+
+                this.toggleLoader(true);
+                await DataService.addStudent({ id, name, gender, class: cls, scores: {} });
+                this.toggleLoader(false);
+
+                this.showToast('Student Added', 'success');
+                this.closeModals();
+                this.loadStudentList(this.state.currentClass); // Refresh list
+            },
+
+            openPrintModal: function() {
+                document.getElementById('modal-print').style.display = 'flex';
+            },
+
+            executePrint: function() {
+                const session = document.getElementById('printSession').value;
+                const term = document.getElementById('printTerm').value;
+                const nextTerm = document.getElementById('printNextTerm').value;
+                
+                this.generateReportHTML(session, term, nextTerm);
+                this.closeModals();
+                setTimeout(() => window.print(), 500);
+            },
+
+            generateReportHTML: function(session, term, nextTerm) {
+                const s = this.state.currentStudent;
+                const cls = s.class;
+                
+                // Get subjects and scores
+                let subjectList = [];
+                if (cls.startsWith('Playgroup')) subjectList = SUBJECTS['Playgroup'];
+                else if (cls.startsWith('Nursery')) subjectList = SUBJECTS['Nursery'];
+                else if (cls.startsWith('KG')) subjectList = SUBJECTS['KG'];
+                else subjectList = SUBJECTS['Primary'];
+
+                // Generate Rows
+                let rowsHTML = '';
+                let grandTotal = 0;
+                let subjectCount = 0;
+
+                subjectList.forEach(sub => {
+                    const score = s.scores[sub] || { ca: 0, exam: 0 };
+                    const total = (score.ca || 0) + (score.exam || 0);
+                    const grade = this.getGrade(total, cls);
+                    
+                    // Only show subjects with grades or strictly configured
+                    rowsHTML += `
+                        <tr>
+                            <td style="text-align:left; font-weight:bold;">${sub}</td>
+                            <td>${score.ca}</td>
+                            <td>${score.exam}</td>
+                            <td>${total}</td>
+                            <td>${grade}</td>
+                            <td>${this.getRemark(grade)}</td>
+                        </tr>
+                    `;
+                    
+                    if (score.ca > 0 || score.exam > 0) {
+                        grandTotal += total;
+                        subjectCount++;
+                    }
+                });
+
+                // Calculate Average
+                const average = subjectCount > 0 ? Math.round(grandTotal / subjectCount) : 0;
+
+                const printArea = document.getElementById('printable-area');
+                printArea.innerHTML = `
+                    <div class="report-card">
+                        <div class="rc-header">
+                            <div class="rc-title">Nifty Steps College</div>
+                            <div class="rc-subtitle">(Primary School Section)</div>
+                            <div>31 Yinka Ogunfile Street, Igbo Oluwo Estate, Ikorodu, Lagos</div>
+                            <div style="margin-top:5px; font-weight:bold;">${session} - ${term.toUpperCase()} REPORT SHEET</div>
+                        </div>
+
+                        <div class="rc-info-row">
+                            <div><strong>Name:</strong> ${s.name.toUpperCase()}</div>
+                            <div><strong>Class:</strong> ${s.class}</div>
+                            <div><strong>Adm No:</strong> ${s.id}</div>
+                        </div>
+
+                        <table class="rc-table">
+                            <thead>
+                                <tr>
+                                    <th style="width:35%;">SUBJECTS</th>
+                                    <th>CA (40)</th>
+                                    <th>EXAM (60)</th>
+                                    <th>TOTAL (100)</th>
+                                    <th>GRADE</th>
+                                    <th>REMARK</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rowsHTML}
+                                <tr style="background:#f0f0f0; font-weight:bold;">
+                                    <td colspan="3" style="text-align:right;">GRAND TOTAL / AVERAGE:</td>
+                                    <td>${grandTotal}</td>
+                                    <td>-</td>
+                                    <td>${average}%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <div style="display:flex; justify-content:space-between; margin-top:30px; font-size:12pt;">
+                            <div style="width:48%; border:1px solid #000; padding:10px;">
+                                <strong>Teacher's Comment:</strong><br>
+                                ${this.getTeacherComment(average)}
+                            </div>
+                            <div style="width:48%; border:1px solid #000; padding:10px;">
+                                <strong>Head Teacher's Comment:</strong><br>
+                                Good performance. Keep it up.
+                            </div>
+                        </div>
+
+                        <div class="rc-footer">
+                            <div class="rc-signature">
+                                <div class="signature-line"></div>
+                                <div>Teacher's Signature</div>
+                            </div>
+                            <div class="rc-signature">
+                                <div class="signature-line"></div>
+                                <div>Head Teacher's Signature</div>
+                            </div>
+                        </div>
+
+                        <div style="margin-top:30px; text-align:center; border:1px dashed #000; padding:10px;">
+                            <strong>School Resumes:</strong> ${nextTerm || 'Pending'}
+                        </div>
+                    </div>
+                `;
+            },
+
+            /* --- HELPERS --- */
+            getGrade: function(score, cls) {
+                if (score >= 80) return 'A';
+                if (score >= 70) return 'B';
+                if (score >= 60) return 'C';
+                if (score >= 50) return 'D';
+                if (score >= 40) return 'E';
+                return 'F';
+            },
+
+            getRemark: function(grade) {
+                if (grade === 'A') return 'Excellent';
+                if (grade === 'B') return 'Very Good';
+                if (grade === 'C') return 'Good';
+                if (grade === 'D') return 'Fair';
+                if (grade === 'E') return 'Pass';
+                return 'Fail';
+            },
+
+            getTeacherComment: function(avg) {
+                if (avg >= 80) return "An outstanding performance. Keep shining!";
+                if (avg >= 70) return "Very good effort. Consistency is key.";
+                if (avg >= 60) return "Good result. Room for improvement.";
+                if (avg >= 50) return "Fair performance. Needs more attention to studies.";
+                return "Please put in more effort next term.";
+            },
+
+            showSection: function(id) {
+                document.querySelectorAll('main section').forEach(s => s.classList.add('hidden'));
+                document.getElementById(id).classList.remove('hidden');
+            },
+
+            goHome: function() {
+                this.showSection('section-landing');
+            },
+            
+            backToClass: function() {
+                this.showSection('section-students');
+            },
+
+            closeModals: function() {
+                document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none');
+            },
+
+            toggleLoader: function(show) {
+                document.getElementById('loader').style.display = show ? 'flex' : 'none';
+            },
+
+            showToast: function(msg, type) {
+                const t = document.getElementById('toast');
+                t.textContent = msg;
+                t.className = `toast show ${type}`;
+                setTimeout(() => t.classList.remove('show'), 3000);
+            }
+        };
+
+        // Start App
+        document.addEventListener('DOMContentLoaded', () => app.init());
+
+    </script>
+</body>
+</html>
