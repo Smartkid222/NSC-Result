@@ -1,1463 +1,2786 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>School Result Management System</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nifty Steps Manager (Advanced)</title>
+    <!-- Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+
     <style>
-        /* --- CORE VARIABLES & RESET --- */
-        :root {
-            --primary: #2563eb;
-            --primary-dark: #1e40af;
-            --secondary: #64748b;
-            --bg: #f1f5f9;
-            --surface: #ffffff;
-            --text: #0f172a;
-            --border: #e2e8f0;
-            --success: #10b981;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-            --radius: 8px;
+      /* =========================================
+           CORE VARIABLES & RESET
+           ========================================= */
+      :root {
+        --primary: #0ea5e9; /* Sky Blue */
+        --primary-dark: #0284c7;
+        --secondary: #64748b;
+        --bg: #f0f9ff;
+        --surface: #ffffff;
+        --text: #0f172a;
+        --border: #cbd5e1;
+        --success: #22c55e;
+        --danger: #ef4444;
+        --warning: #f59e0b;
+        --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        --radius: 12px;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        outline: none;
+      }
+      body {
+        font-family: "Segoe UI", Roboto, sans-serif;
+        background-color: var(--bg);
+        color: var(--text);
+        line-height: 1.6;
+        min-height: 100vh;
+      }
+
+      /* --- UTILITIES --- */
+      .hidden {
+        display: none !important;
+      }
+      .flex {
+        display: flex;
+      }
+      .flex-col {
+        flex-direction: column;
+      }
+      .items-center {
+        align-items: center;
+      }
+      .justify-between {
+        justify-content: space-between;
+      }
+      .gap-2 {
+        gap: 0.5rem;
+      }
+      .gap-4 {
+        gap: 1rem;
+      }
+      .text-sm {
+        font-size: 0.875rem;
+      }
+      .font-bold {
+        font-weight: 700;
+      }
+      .w-full {
+        width: 100%;
+      }
+      .text-center {
+        text-align: center;
+      }
+      .grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+
+      /* --- BUTTONS --- */
+      .btn {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: var(--radius);
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.2s;
+        font-size: 0.95rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+      .btn:active {
+        transform: scale(0.98);
+      }
+      .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+      .btn-primary {
+        background-color: var(--primary);
+        color: white;
+        box-shadow: 0 4px 10px rgba(14, 165, 233, 0.3);
+      }
+      .btn-primary:hover {
+        background-color: var(--primary-dark);
+      }
+      .btn-outline {
+        background-color: transparent;
+        border: 2px solid var(--primary);
+        color: var(--primary);
+      }
+      .btn-outline:hover {
+        background-color: #f0f9ff;
+      }
+      .btn-danger {
+        background-color: var(--danger);
+        color: white;
+      }
+      .btn-sm {
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+        border-radius: 8px;
+      }
+      .btn-filter {
+        font-size: 0.85rem;
+        padding: 0.4rem 1rem;
+        border-radius: 20px;
+        background: #e2e8f0;
+        color: var(--secondary);
+        border: none;
+        cursor: pointer;
+      }
+      .btn-filter.active {
+        background: var(--primary);
+        color: white;
+      }
+
+      /* --- LOADING OVERLAY --- */
+      .loader-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(5px);
+        display: none;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+      }
+      .spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid var(--border);
+        border-top: 5px solid var(--primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* --- AUTH VIEW --- */
+      .auth-wrapper {
+        background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+      .auth-container {
+        background: white;
+        width: 100%;
+        max-width: 550px;
+        border-radius: 16px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        animation: slideUp 0.4s ease;
+      }
+      @keyframes slideUp {
+        from {
+          transform: translateY(20px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+      .auth-header {
+        text-align: center;
+        padding: 30px 20px 10px;
+        background: #fff;
+      }
+      .app-title {
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: var(--primary-dark);
+        margin-bottom: 5px;
+      }
+      .tabs {
+        display: flex;
+        border-bottom: 2px solid #e2e8f0;
+      }
+      .tab-btn {
+        flex: 1;
+        padding: 15px;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        font-weight: 600;
+        color: var(--secondary);
+      }
+      .tab-btn.active {
+        color: var(--primary);
+        border-bottom: 3px solid var(--primary);
+      }
+      .forms-wrapper {
+        padding: 30px;
+      }
+      .form-group {
+        margin-bottom: 15px;
+      }
+      .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+        color: #475569;
+        font-weight: 600;
+      }
+      .form-control {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e2e8f0;
+        border-radius: var(--radius);
+        font-size: 1rem;
+        transition: border 0.3s;
+      }
+      .form-control:focus {
+        border-color: var(--primary);
+        background-color: #f8fafc;
+      }
+
+      /* Subject Builder Styles */
+      .subject-builder {
+        background: #f8fafc;
+        padding: 15px;
+        border-radius: var(--radius);
+        border: 1px dashed #cbd5e1;
+        margin-bottom: 15px;
+      }
+      .chip-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+      }
+      .subject-chip {
+        background: #e0f2fe;
+        color: #0369a1;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .chip-remove {
+        cursor: pointer;
+        font-weight: bold;
+        color: #dc2626;
+      }
+
+      /* --- DASHBOARD HEADER --- */
+      header {
+        background: var(--surface);
+        padding: 1rem 2rem;
+        box-shadow: var(--shadow);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+      .logo {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .container {
+        max-width: 1200px;
+        margin: 30px auto;
+        padding: 0 20px;
+      }
+
+      /* --- CARDS & GRID --- */
+      .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 25px;
+      }
+      .card {
+        background: var(--surface);
+        border-radius: 16px;
+        padding: 25px;
+        box-shadow: var(--shadow);
+        border: 1px solid white;
+        transition:
+          transform 0.2s,
+          box-shadow 0.2s;
+        display: flex;
+        flex-direction: column;
+        cursor: pointer;
+        position: relative;
+      }
+      .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        border-color: var(--primary);
+      }
+      .card-content {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        margin-bottom: 10px;
+      }
+      .card-icon {
+        font-size: 2.5rem;
+        margin-bottom: 5px;
+      }
+      .card-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 2px;
+      }
+      .card-meta {
+        font-size: 0.9rem;
+        color: var(--secondary);
+        line-height: 1.3;
+      }
+      .card-footer {
+        margin-top: auto;
+        z-index: 2;
+        position: relative;
+      }
+
+      .badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        background: #e0f2fe;
+        color: var(--primary-dark);
+      }
+
+      /* --- TABLES --- */
+      .list-container {
+        background: var(--surface);
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+      .list-header {
+        padding: 20px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        background: #f8fafc;
+      }
+      .search-input {
+        padding: 10px 15px;
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        width: 250px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 15px 20px;
+        text-align: left;
+        border-bottom: 1px solid var(--border);
+      }
+      th {
+        background: #f1f5f9;
+        font-weight: 600;
+        color: var(--secondary);
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 0.05em;
+      }
+      tr:hover {
+        background-color: #f8fafc;
+      }
+
+      /* --- MODALS --- */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        backdrop-filter: blur(2px);
+      }
+      .modal {
+        background: white;
+        width: 90%;
+        max-width: 500px;
+        border-radius: 16px;
+        padding: 30px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        animation: slideUp 0.3s ease;
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+
+      /* --- TOAST --- */
+      .toast {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        padding: 15px 25px;
+        border-radius: 12px;
+        color: white;
+        font-weight: 600;
+        transform: translateY(100px);
+        transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        z-index: 2000;
+      }
+      .toast.show {
+        transform: translateY(0);
+      }
+      .toast.success {
+        background-color: var(--success);
+      }
+      .toast.error {
+        background-color: var(--danger);
+      }
+
+      /* --- BREADCRUMBS --- */
+      .breadcrumbs {
+        font-size: 0.95rem;
+        color: var(--secondary);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .breadcrumbs span {
+        cursor: pointer;
+        transition: color 0.2s;
+      }
+      .breadcrumbs span:hover {
+        color: var(--primary);
+        text-decoration: underline;
+      }
+      .breadcrumbs span:last-child {
+        cursor: default;
+        color: var(--text);
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      /* =========================================
+           FEE MANAGEMENT STYLES
+           ========================================= */
+      .fee-summary-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 25px;
+      }
+      .fee-stat-card {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: var(--shadow);
+        border-left: 5px solid var(--primary);
+      }
+      .fee-stat-card.income {
+        border-left-color: var(--success);
+      }
+      .fee-stat-card.pending {
+        border-left-color: var(--danger);
+      }
+      .fee-stat-title {
+        font-size: 0.85rem;
+        color: var(--secondary);
+        text-transform: uppercase;
+        font-weight: 700;
+      }
+      .fee-stat-value {
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: var(--text);
+        margin-top: 5px;
+      }
+
+      .fee-status-badge {
+        padding: 5px 10px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+      .status-paid {
+        background-color: #dcfce7;
+        color: #15803d;
+      }
+      .status-partial {
+        background-color: #fef9c3;
+        color: #a16207;
+      }
+      .status-owing {
+        background-color: #fee2e2;
+        color: #b91c1c;
+      }
+
+      .fee-tabs {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+      .fee-tab-btn {
+        padding: 10px 20px;
+        border-radius: 20px;
+        border: 1px solid var(--border);
+        background: white;
+        cursor: pointer;
+        font-weight: 600;
+      }
+      .fee-tab-btn.active {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+      }
+
+      /* --- PRINT STYLES --- */
+      #printable-area {
+        display: none;
+      }
+      /* --- ENHANCED PRINT STYLES --- */
+      @media print {
+        body * {
+          visibility: hidden;
+        }
+        #printable-area,
+        #printable-area * {
+          visibility: visible;
+        }
+        #printable-area {
+          display: block !important;
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 100%;
+          padding: 40px;
+          color: #000;
+          background: #fff;
+          font-family: "Times New Roman", serif;
+        }
+        .rp-header {
+          text-align: center;
+          margin-bottom: 20px;
+          border-bottom: 2px solid #000;
+          padding-bottom: 10px;
+        }
+        .rp-school-name {
+          font-size: 26px;
+          font-weight: bold;
+          text-transform: uppercase;
+          margin-bottom: 5px;
+        }
+        .rp-motto {
+          font-style: italic;
+          font-size: 14px;
+          margin-bottom: 5px;
+        }
+        .rp-address {
+          font-size: 14px;
+          margin-bottom: 5px;
+        }
+        .rp-contact {
+          font-size: 13px;
+          margin-bottom: 10px;
+        }
+        .rp-report-title {
+          font-size: 18px;
+          font-weight: bold;
+          text-decoration: underline;
+          margin-top: 10px;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
-        body { font-family: 'Segoe UI', Roboto, sans-serif; background-color: var(--bg); color: var(--text); line-height: 1.6; min-height: 100vh; }
-        
-        /* --- UTILITIES --- */
-        .hidden { display: none !important; }
-        .flex { display: flex; }
-        .flex-col { flex-direction: column; }
-        .items-center { align-items: center; }
-        .justify-between { justify-content: space-between; }
-        .gap-2 { gap: 0.5rem; }
-        .gap-4 { gap: 1rem; }
-        .text-sm { font-size: 0.875rem; }
-        .font-bold { font-weight: 700; }
-        .w-full { width: 100%; }
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        
-        /* --- BUTTONS --- */
-        .btn { padding: 0.6rem 1.2rem; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.2s; font-size: 0.9rem; display: inline-flex; align-items: center; justify-content: center; gap: 5px;}
-        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        .btn-primary { background-color: var(--primary); color: white; }
-        .btn-primary:hover { background-color: var(--primary-dark); }
-        .btn-outline { background-color: transparent; border: 1px solid var(--primary); color: var(--primary); }
-        .btn-outline:hover { background-color: #eff6ff; }
-        .btn-danger { background-color: var(--danger); color: white; }
-        .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.85rem; }
-        .btn-filter { font-size: 0.85rem; padding: 0.4rem 1rem; border-radius: 20px; background: #e2e8f0; color: var(--secondary); border: none; cursor: pointer; }
-        .btn-filter.active { background: var(--primary); color: white; }
-
-        /* --- LOADING OVERLAY --- */
-        .loader-overlay {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(4px);
-            display: none; /* Hidden by default */
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
+        .rp-info-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 10px;
+          margin: 20px 0;
+          font-size: 15px;
+          border: 1px solid #000;
+          padding: 15px;
         }
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid var(--border);
-            border-top: 5px solid var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
+        .info-item {
+          display: flex;
+          margin-bottom: 5px;
         }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        /* --- AUTH VIEW STYLES --- */
-        .auth-wrapper {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        .auth-container {
-            background: white;
-            width: 100%;
-            max-width: 600px;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-            overflow: hidden;
-            animation: slideUp 0.4s ease;
-        }
-        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-        .auth-header { text-align: center; padding: 0; border-bottom: 1px solid #eee; }
-        .app-title { padding: 20px 0 10px; font-size: 1.5rem; font-weight: 700; color: var(--text); }
-        .tabs { display: flex; }
-        .tab-btn { flex: 1; padding: 15px; border: none; background: #f8f9fa; cursor: pointer; color: #777; transition: 0.3s; border-bottom: 2px solid transparent; }
-        .tab-btn.active { background: white; color: var(--primary); border-bottom: 2px solid var(--primary); }
-        .forms-wrapper { padding: 30px; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 6px; font-size: 0.9rem; color: #555; font-weight: 500; }
-        .form-control { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: var(--radius); font-size: 1rem; transition: border 0.3s; }
-        .form-control:focus { border-color: var(--primary); }
-        
-        .name-row { display: flex; gap: 10px; }
-        .name-row .form-group { flex: 1; }
-        .subject-builder { background: #f8fafc; padding: 15px; border-radius: var(--radius); border: 1px dashed #cbd5e1; margin-bottom: 15px; }
-        .chip-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-        .subject-chip { background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; display: flex; align-items: center; gap: 6px; }
-        .chip-remove { cursor: pointer; font-weight: bold; color: #dc2626; }
-        .chip-remove:hover { color: #b91c1c; }
-
-        /* --- DASHBOARD VIEW STYLES --- */
-        header { background: var(--surface); padding: 1rem 2rem; box-shadow: var(--shadow); display: flex; justify-content: space-between; align-items: center; }
-        .logo { font-size: 1.25rem; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 8px; }
-        
-        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-        
-        /* Cards & Grid */
-        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
-        .card { background: var(--surface); border-radius: 12px; padding: 20px; box-shadow: var(--shadow); border: 1px solid var(--border); transition: transform 0.2s; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-        .card:hover { transform: translateY(-4px); border-color: var(--primary); }
-        .card-lg { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; padding: 30px; border-left: 5px solid var(--primary); background: linear-gradient(to right, #fff, #f8fafc); }
-        
-        .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
-        .badge-jss { background: #e0f2fe; color: #0369a1; }
-        .badge-sss { background: #fef3c7; color: #b45309; }
-
-        /* Tables */
-        .table-container { overflow-x: auto; background: var(--surface); border-radius: 8px; box-shadow: var(--shadow); }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border); }
-        th { background: #f8fafc; font-weight: 600; color: var(--secondary); font-size: 0.9rem; white-space: nowrap; }
-        tr:hover { background: #f1f5f9; }
-        
-        .score-input-mini { width: 60px; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center; }
-        .score-input-mini:focus { border-color: var(--primary); outline: none; }
-        .total-mini { font-weight: bold; display: inline-block; width: 40px; text-align: center; }
-
-        /* Student Detail View */
-        .score-card { background: var(--surface); padding: 25px; border-radius: 12px; box-shadow: var(--shadow); }
-        .score-header { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
-        .avatar { width: 60px; height: 60px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; }
-        
-        .score-row { display: grid; grid-template-columns: 2fr 1fr 1fr 80px; align-items: center; padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
-        .score-input { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px; text-align: center; }
-        .score-input:disabled { background: #f8fafc; color: #94a3b8; cursor: not-allowed; border-color: transparent; }
-        .subject-label { font-weight: 500; display: flex; flex-direction: column; }
-        .readonly-badge { font-size: 0.7rem; color: var(--secondary); font-weight: normal; font-style: italic; }
-        
-        /* Modals & Toasts */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
-        .modal { background: white; width: 90%; max-width: 500px; border-radius: 10px; padding: 25px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); animation: slideUp 0.3s ease; max-height: 90vh; overflow-y: auto; }
-        
-        .toast { position: fixed; bottom: 20px; right: 20px; padding: 12px 20px; border-radius: 8px; color: white; font-weight: 500; transform: translateY(100px); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 2000; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .toast.show { transform: translateY(0); }
-        .toast.success { background-color: var(--success); }
-        .toast.error { background-color: var(--danger); }
-
-        .breadcrumbs { font-size: 0.9rem; color: var(--secondary); margin-bottom: 20px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-        .breadcrumbs span { cursor: pointer; }
-        .breadcrumbs span:hover { color: var(--primary); text-decoration: underline; }
-        .breadcrumbs span:last-child { cursor: default; color: var(--text); font-weight: 600; text-decoration: none; }
-
-        /* Print Styles */
-        #printable-area { display: none; }
-        @media print {
-            body * { visibility: hidden; }
-            #printable-area, #printable-area * { visibility: visible; }
-            #printable-area { display: block; position: absolute; left: 0; top: 0; width: 100%; background: white; padding: 20px; font-family: 'Times New Roman', serif; }
-            .rp-header { text-align: center; border-bottom: 3px double #000; padding-bottom: 10px; margin-bottom: 20px; }
-            .rp-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-            .rp-table th, .rp-table td { border: 1px solid #000; padding: 8px; text-align: center; }
+        .info-label {
+          font-weight: bold;
+          width: 160px;
         }
 
-    /* ================= MOBILE RESPONSIVENESS IMPROVEMENTS ================= */
-    @media (max-width: 600px) {
-        
-        /* --- 1. AUTH FORM FIXES --- */
-        /* Stack name fields vertically on mobile */
-        .name-row {
-            flex-direction: column;
-            gap: 0;
+        .rp-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-top: 15px;
+        }
+        .rp-table th,
+        .rp-table td {
+          border: 1px solid #000;
+          padding: 8px;
+          text-align: center;
+          font-size: 13px;
+        }
+        .rp-table th {
+          background-color: #f2f2f2 !important;
+          -webkit-print-color-adjust: exact;
         }
 
-        /* Ensure the auth container takes full width */
-        .auth-container {
-            width: 100%;
-            border-radius: 0;
-            box-shadow: none;
+        .summary-section {
+          margin-top: 20px;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 20px;
+        }
+        .comment-box {
+          border: 1px solid #000;
+          padding: 10px;
+          margin-top: 15px;
+          min-height: 60px;
+        }
+        .comment-title {
+          font-weight: bold;
+          text-decoration: underline;
+          margin-bottom: 5px;
         }
 
-        .forms-wrapper {
-            padding: 20px;
+        .rp-footer {
+          margin-top: 50px;
+          display: flex;
+          justify-content: space-between;
+        }
+        .sig-line {
+          border-top: 1px solid #000;
+          width: 220px;
+          text-align: center;
+          padding-top: 5px;
+          font-size: 14px;
         }
 
-        /* --- 2. SCORE ENTRY TABLE CARD LAYOUT (The Fix You Requested) --- */
-        
-        /* Target the specific section where score entry happens */
+        /* Prevent screen elements from appearing */
+        .btn,
+        .breadcrumbs,
+        header,
+        .toast,
+        .modal-overlay {
+          display: none !important;
+        }
+      }
+
+      /* =========================================
+           MOBILE RESPONSIVENESS
+           ========================================= */
+      @media (max-width: 600px) {
         #section-batch-entry table,
         #section-batch-entry thead,
         #section-batch-entry tbody,
         #section-batch-entry th,
         #section-batch-entry td,
         #section-batch-entry tr {
-            display: block; /* Converts table elements to block elements */
+          display: block;
         }
-
-        /* Hide the original horizontal header to save space */
         #section-batch-entry thead tr {
-            position: absolute;
-            top: -9999px;
-            left: -9999px;
+          position: absolute;
+          top: -9999px;
+          left: -9999px;
         }
-
-        /* Style each Row as a Card */
         #section-batch-entry tr {
-            background: #fff;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            margin-bottom: 20px; /* Space between cards */
-            padding: 15px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            animation: fadeIn 0.3s ease;
+          background: #fff;
+          border: 1px solid var(--border);
+          border-radius: 12px;
+          margin-bottom: 20px;
+          padding: 15px;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
         }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* Style individual cells within the card */
         #section-batch-entry td {
-            position: relative;
-            padding: 0;
-            text-align: left;
-            display: flex; /* Use flex for alignment */
-            flex-direction: column; /* Stack label and content */
-            margin-bottom: 15px;
-            border: none;
+          position: relative;
+          padding-left: 0;
+          padding-right: 0;
+          text-align: left;
+          display: flex;
+          flex-direction: column;
+          margin-bottom: 15px;
+          border: none;
         }
-
-        #section-batch-entry td:last-child {
-            margin-bottom: 0;
+        #section-batch-entry td:before {
+          content: attr(data-label);
+          font-weight: 600;
+          color: var(--secondary);
+          font-size: 0.8rem;
+          margin-bottom: 4px;
+          display: block;
         }
-
-        /* --- AUTOMATIC LABELS VIA CSS --- */
-        /* Since we hid the <thead>, we add labels here */
-        #section-batch-entry td:nth-of-type(1)::before { content: "Admin No"; font-weight:600; color:var(--secondary); font-size:0.8rem; margin-bottom:4px; display:block;}
-        #section-batch-entry td:nth-of-type(2)::before { content: "Student Name"; font-weight:600; color:var(--secondary); font-size:0.8rem; margin-bottom:4px; display:block;}
-        #section-batch-entry td:nth-of-type(3)::before { content: "CA Score (40)"; font-weight:600; color:var(--secondary); font-size:0.9rem; margin-bottom:8px; display:block;}
-        #section-batch-entry td:nth-of-type(4)::before { content: "Exam Score (60)"; font-weight:600; color:var(--secondary); font-size:0.9rem; margin-bottom:8px; display:block;}
-        #section-batch-entry td:nth-of-type(5)::before { content: "Total Score"; font-weight:600; color:var(--primary); font-size:0.9rem; margin-bottom:5px; display:block;}
-
-        /* --- SPECIFIC STYLING FOR CONTENT --- */
-        
-        /* 1. Admin No & Name Styling */
-        #section-batch-entry td:nth-of-type(1),
-        #section-batch-entry td:nth-of-type(2) {
-            border-bottom: 1px solid #f1f5f9;
-            padding-bottom: 10px;
-            margin-bottom: 15px;
-        }
-        #section-batch-entry td:nth-of-type(1) { color: var(--primary); font-weight: bold; font-size: 1.1rem; }
-        #section-batch-entry td:nth-of-type(2) { font-size: 1.2rem; font-weight: 700; color: var(--text); }
-
-        /* 2. Inputs (CA & Exam) */
         #section-batch-entry input {
-            width: 100%;
-            padding: 12px;
-            font-size: 1.1rem;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            text-align: center;
-            transition: border-color 0.2s;
+          width: 100%;
+          padding: 12px;
+          font-size: 1.1rem;
+          text-align: center;
         }
-        #section-batch-entry input:focus {
-            border-color: var(--primary);
-            background-color: #f8fafc;
-        }
-
-        /* 3. Total Score */
         #section-batch-entry .total-mini {
-            width: 100%;
-            font-size: 1.5rem;
-            color: var(--primary);
-            text-align: right;
-            display: block;
-            background: #eff6ff;
-            padding: 10px;
-            border-radius: 6px;
+          width: 100%;
+          font-size: 1.5rem;
+          color: var(--primary);
+          text-align: right;
+          display: block;
+          background: #eff6ff;
+          padding: 10px;
+          border-radius: 6px;
         }
 
-        /* --- BUTTON ADJUSTMENTS --- */
-        #section-batch-entry .btn {
-            width: 100%;
-            justify-content: center;
-            margin-top: 10px;
+        .auth-container {
+          border-radius: 0;
+          max-height: 100vh;
+          overflow-y: auto;
         }
-    }
+        .forms-wrapper {
+          padding: 20px;
+        }
+      }
+
+      /* Mid-Term Input Specifics */
+      .input-midterm {
+        font-size: 1.5rem !important;
+        text-align: center;
+        font-weight: bold;
+        color: var(--primary);
+      }
     </style>
-</head>
-<body>
-
-        <!-- GLOBAL LOADING SPINNER -->
+  </head>
+  <body>
+    <!-- GLOBAL LOADER -->
     <div id="loader" class="loader-overlay">
-        <div class="spinner"></div>
-        <p style="margin-top: 15px; font-weight: 600; color: var(--primary);">Processing...</p>
+      <div class="spinner"></div>
+      <p style="margin-top: 15px; font-weight: 600; color: var(--primary-dark)">
+        Processing...
+      </p>
     </div>
+
+    <!-- TOAST -->
+    <div id="toast" class="toast"></div>
 
     <!-- ================= AUTH VIEW ================= -->
     <div id="view-auth" class="auth-wrapper">
-        <div class="auth-container">
-            <div class="auth-header">
-                <h1 class="app-title">Teacher Portal</h1>
-                <div class="tabs">
-                    <button class="tab-btn active" onclick="app.switchAuthTab('login')">Login</button>
-                    <button class="tab-btn" onclick="app.switchAuthTab('signup')">Sign Up</button>
-                </div>
-            </div>
-
-            <div class="forms-wrapper">
-                <!-- LOGIN FORM -->
-                <form id="form-login" onsubmit="app.handleLogin(event)">
-                    <div class="name-row">
-                        <div class="form-group">
-                            <label>Title</label>
-                            <select id="loginTitle" class="form-control">
-                                <option value="Mr.">Mr.</option>
-                                <option value="Mrs.">Mrs.</option>
-                                <option value="Miss">Miss</option>
-                                <option value="Dr.">Dr.</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>First Name</label>
-                            <input type="text" id="loginFirstName" class="form-control" placeholder="First" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Last Name</label>
-                            <input type="text" id="loginLastName" class="form-control" placeholder="Last" required>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Password</label>
-                        <input type="password" id="loginPass" class="form-control" placeholder="•••••" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-full">Login to Dashboard</button>
-                </form>
-
-                <!-- SIGNUP FORM -->
-                <form id="form-signup" class="hidden" onsubmit="app.handleSignup(event)">
-                    <div class="form-group">
-                        <label>Role</label>
-                        <select id="signupRole" class="form-control" onchange="app.handleRoleChange()" required>
-                            <option value="Teacher">Teacher</option>
-                            <option value="Class Teacher">Class Teacher</option>
-                            <option value="Admin">Admin</option>
-                            <option value="Head">Head</option>
-                        </select>
-                    </div>
-                    <div class="name-row">
-                        <div class="form-group">
-                            <label>Title</label>
-                            <select id="signupTitle" class="form-control">
-                                <option value="Mr.">Mr.</option>
-                                <option value="Mrs.">Mrs.</option>
-                                <option value="Miss">Miss</option>
-                                <option value="Dr.">Dr.</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>First Name</label>
-                            <input type="text" id="signupFirstName" class="form-control" placeholder="First" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Last Name</label>
-                            <input type="text" id="signupLastName" class="form-control" placeholder="Last" required>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Password</label>
-                        <input type="password" id="signupPass" class="form-control" required>
-                    </div>
-
-                    <div id="class-teacher-group" class="hidden form-group">
-                        <label>Assigned Class (As Class Teacher)</label>
-                        <select id="signupClass" class="form-control">
-                            <option value="" disabled selected>Select Class</option>
-                            <option value="JSS1">JSS1</option><option value="JSS2">JSS2</option><option value="JSS3">JSS3</option>
-                            <option value="SSS1">SSS1</option><option value="SSS2">SSS2</option><option value="SSS3">SSS3</option>
-                        </select>
-                    </div>
-
-                    <div id="subject-group">
-                        <div class="subject-builder">
-                            <label style="margin-bottom:8px; display:block;">Subjects Taught</label>
-                            <div class="flex gap-2">
-                                <select id="subjectLevel" class="form-control" onchange="app.populateSubjects()">
-                                    <option value="" disabled selected>Level</option>
-                                    <option value="JSS">JSS</option>
-                                    <option value="SSS">SSS</option>
-                                </select>
-                                <select id="subjectName" class="form-control">
-                                    <option value="" disabled selected>Subject</option>
-                                </select>
-                                <select id="subjectClass" class="form-control">
-                                    <option value="" disabled selected>Class</option>
-                                </select>
-                                <button type="button" class="btn btn-primary" onclick="app.addSubject()">+</button>
-                            </div>
-                            <div id="chipList" class="chip-list"></div>
-                            <small id="subjectError" style="color:var(--danger); display:none;">Add at least one subject</small>
-                        </div>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary w-full">Create Account</button>
-                </form>
-            </div>
+      <div class="auth-container">
+        <div class="auth-header">
+          <div class="app-title">🎓 Teacher Portal</div>
+          <p class="text-secondary" style="margin-bottom: 20px">
+            Nifty Steps College
+          </p>
+          <div class="tabs">
+            <button class="tab-btn active" onclick="app.switchAuthTab('login')">
+              Login
+            </button>
+            <button class="tab-btn" onclick="app.switchAuthTab('signup')">
+              Sign Up
+            </button>
+          </div>
         </div>
+
+        <div class="forms-wrapper">
+          <!-- LOGIN FORM -->
+          <form id="form-login" onsubmit="app.handleLogin(event)">
+            <div class="form-group">
+              <label>Title</label>
+              <select id="loginTitle" class="form-control">
+                <option value="Mr.">Mr.</option>
+                <option value="Mrs.">Mrs.</option>
+                <option value="Miss">Miss</option>
+                <option value="Dr.">Dr.</option>
+              </select>
+            </div>
+            <div class="grid-2">
+              <div class="form-group">
+                <label>First Name</label>
+                <input
+                  type="text"
+                  id="loginFirstName"
+                  class="form-control"
+                  placeholder="First"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label>Last Name</label>
+                <input
+                  type="text"
+                  id="loginLastName"
+                  class="form-control"
+                  placeholder="Last"
+                  required
+                />
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Password</label>
+              <input
+                type="password"
+                id="loginPass"
+                class="form-control"
+                placeholder="•••••"
+                required
+              />
+            </div>
+            <button type="submit" class="btn btn-primary w-full">
+              Access Dashboard
+            </button>
+          </form>
+
+          <!-- SIGNUP FORM -->
+          <form
+            id="form-signup"
+            class="hidden"
+            onsubmit="app.handleSignup(event)"
+          >
+            <div class="form-group">
+              <label>Role</label>
+              <select
+                id="signupRole"
+                class="form-control"
+                onchange="app.handleRoleChange()"
+                required
+              >
+                <option value="Teacher">Teacher</option>
+                <option value="Class Teacher">Class Teacher</option>
+                <option value="Admin">Admin</option>
+                <option value="Head">Head</option>
+              </select>
+            </div>
+            <div class="grid-2">
+              <div class="form-group">
+                <label>Title</label>
+                <select id="signupTitle" class="form-control">
+                  <option value="Mr.">Mr.</option>
+                  <option value="Mrs.">Mrs.</option>
+                  <option value="Miss">Miss</option>
+                  <option value="Dr.">Dr.</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Password</label>
+                <input
+                  type="password"
+                  id="signupPass"
+                  class="form-control"
+                  required
+                />
+              </div>
+            </div>
+            <div class="grid-2">
+              <div class="form-group">
+                <label>First Name</label>
+                <input
+                  type="text"
+                  id="signupFirstName"
+                  class="form-control"
+                  placeholder="First"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label>Last Name</label>
+                <input
+                  type="text"
+                  id="signupLastName"
+                  class="form-control"
+                  placeholder="Last"
+                  required
+                />
+              </div>
+            </div>
+
+            <div id="class-teacher-group" class="form-group hidden">
+              <label>Assigned Class</label>
+              <select id="signupClass" class="form-control">
+                <option value="" disabled selected>Select Class</option>
+                <option value="JSS1">JSS1</option>
+                <option value="JSS2">JSS2</option>
+                <option value="JSS3">JSS3</option>
+                <option value="SSS1">SSS1</option>
+                <option value="SSS2">SSS2</option>
+                <option value="SSS3">SSS3</option>
+              </select>
+            </div>
+
+            <div id="subject-group">
+              <div class="subject-builder">
+                <label style="margin-bottom: 8px; display: block"
+                  >Subjects Taught</label
+                >
+                <div class="flex gap-2" style="flex-wrap: wrap">
+                  <select
+                    id="subjectLevel"
+                    class="form-control"
+                    onchange="app.populateSubjects()"
+                    style="flex: 1"
+                  >
+                    <option value="" disabled selected>Level</option>
+                    <option value="JSS">JSS</option>
+                    <option value="SSS">SSS</option>
+                  </select>
+                  <select id="subjectName" class="form-control" style="flex: 1">
+                    <option value="" disabled selected>Subject</option>
+                  </select>
+                  <select
+                    id="subjectClass"
+                    class="form-control"
+                    style="flex: 1"
+                  >
+                    <option value="" disabled selected>Class</option>
+                  </select>
+                  <button
+                    type="button"
+                    class="btn btn-primary"
+                    onclick="app.addSubject()"
+                  >
+                    +
+                  </button>
+                </div>
+                <div id="chipList" class="chip-list"></div>
+                <small
+                  id="subjectError"
+                  style="color: var(--danger); display: none"
+                  >Add at least one subject</small
+                >
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-full">
+              Create Account
+            </button>
+          </form>
+        </div>
+      </div>
     </div>
 
     <!-- ================= DASHBOARD VIEW ================= -->
     <div id="view-dashboard" class="hidden">
-        <header>
-            <div class="logo">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
-                NSCR-Manager
+      <header>
+        <div class="logo">
+          <div
+            style="
+              background: var(--primary);
+              width: 40px;
+              height: 40px;
+              border-radius: 8px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: white;
+              font-weight: bold;
+            "
+          >
+            NS
+          </div>
+          <div>
+            <div style="line-height: 1; font-size: 1.2rem">Nifty Steps</div>
+            <div
+              style="
+                font-size: 0.7rem;
+                color: var(--secondary);
+                letter-spacing: 1px;
+                font-weight: bold;
+              "
+            >
+              COLLEGE
             </div>
-            <div class="flex items-center gap-4">
-                <div class="text-right">
-                    <div id="user-display-name" class="font-bold">Teacher Name</div>
-                    <div id="user-display-role" class="text-sm text-secondary">Role</div>
-                </div>
-                <button class="btn btn-outline btn-sm" onclick="app.logout()">Logout</button>
+          </div>
+        </div>
+        <div class="flex items-center gap-4">
+          <div class="text-right hidden-mobile">
+            <div id="user-name" class="font-bold">User Name</div>
+            <div
+              id="user-role"
+              class="text-sm text-secondary"
+              style="font-size: 0.8rem"
+            >
+              Role
             </div>
-        </header>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="app.logout()">
+            Logout
+          </button>
+        </div>
+      </header>
 
-        <main class="container">
-            
-            <!-- 1. DASHBOARD LANDING -->
-            <section id="section-landing">
-                <!-- Injected via JS -->
-            </section>
+      <main class="container">
+        <!-- 1. DASHBOARD LANDING -->
+        <section id="section-landing">
+          <h2 style="margin-bottom: 20px; color: var(--text)">
+            Welcome Back! 👋
+          </h2>
+          <div class="dashboard-grid" id="landing-grid"></div>
+        </section>
 
-            <!-- 2. CLASS LIST (For Subject Teachers / Admin Manage Students) -->
-            <section id="section-class-list" class="hidden">
-                <div class="breadcrumbs">
-                    <span onclick="app.goHome()">Home</span> > <span id="breadcrumb-action">Classes</span>
-                </div>
-                <h2 id="list-title" style="margin-bottom:15px;">Classes</h2>
-                <div class="dashboard-grid" id="class-grid"></div>
-            </section>
+        <!-- 2. ALL STAFF -->
+        <section id="section-staff" class="hidden">
+          <div class="breadcrumbs">
+            <span onclick="app.goHome()">Home</span> >
+            <span class="font-bold">All Staff Directory</span>
+          </div>
+          <div class="list-container">
+            <div class="list-header"><h2>Staff Members</h2></div>
+            <div style="overflow-x: auto">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Role</th>
+                    <th>Assigned Class</th>
+                    <th>Subjects</th>
+                  </tr>
+                </thead>
+                <tbody id="staff-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
 
-            <!-- 3. SUBJECT LIST (Select Subject within a Class) -->
-            <section id="section-subject-list" class="hidden">
-                <div class="breadcrumbs">
-                    <span onclick="app.goHome()">Home</span> > <span id="crumb-cls-action">Classes</span> > <span id="crumb-class-name"></span>
-                </div>
-                
-                <!-- DEPARTMENT FILTER (SSS Only) -->
-                <div id="dept-filter-container" class="hidden" style="margin-bottom:20px; text-align:center;">
-                    <button class="btn-filter active" onclick="app.filterSSSSubjects('All', this)">All</button>
-                    <button class="btn-filter" onclick="app.filterSSSSubjects('Science', this)">Sci</button>
-                    <button class="btn-filter" onclick="app.filterSSSSubjects('Art', this)">Art</button>
-                    <button class="btn-filter" onclick="app.filterSSSSubjects('Commercial', this)">Comm</button>
-                </div>
+        <!-- 3. STUDENT PERFORMANCE -->
+        <section id="section-performance" class="hidden">
+          <div class="breadcrumbs">
+            <span onclick="app.goHome()">Home</span> >
+            <span class="font-bold">Student Performance</span>
+          </div>
+          <div class="list-container">
+            <div class="list-header">
+              <div>
+                <h2>🏆 Top Performers</h2>
+                <p class="text-sm text-secondary">Based on average scores</p>
+              </div>
+            </div>
+            <div style="overflow-x: auto">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Rank</th>
+                    <th>Student Name</th>
+                    <th>Class</th>
+                    <th>Average %</th>
+                  </tr>
+                </thead>
+                <tbody id="perf-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
 
-                <h2 style="margin-bottom:15px;">Select Subject</h2>
-                <div class="dashboard-grid" id="subject-grid"></div>
-            </section>
+        <!-- 4. FEE MANAGEMENT -->
+        <section id="section-fees" class="hidden">
+          <div class="breadcrumbs">
+            <span onclick="app.goHome()">Home</span> >
+            <span class="font-bold">Fee Management</span>
+          </div>
+          <div class="fee-tabs">
+            <button
+              class="fee-tab-btn active"
+              onclick="app.switchFeeTab('collect')"
+            >
+              Collect Fees
+            </button>
+            <button class="fee-tab-btn" onclick="app.switchFeeTab('settings')">
+              Fee Settings
+            </button>
+          </div>
+          <!-- COLLECT FEES TAB -->
+          <div id="fee-tab-collect">
+            <div class="fee-summary-cards">
+              <div class="fee-stat-card">
+                <div class="fee-stat-title">Total Expected</div>
+                <div class="fee-stat-value" id="fee-total-expected">₦0</div>
+              </div>
+              <div class="fee-stat-card income">
+                <div class="fee-stat-title">Total Collected</div>
+                <div class="fee-stat-value" id="fee-total-collected">₦0</div>
+              </div>
+              <div class="fee-stat-card pending">
+                <div class="fee-stat-title">Outstanding</div>
+                <div class="fee-stat-value" id="fee-total-outstanding">₦0</div>
+              </div>
+            </div>
+            <div class="list-container">
+              <div class="list-header">
+                <div><h2>Student Accounts</h2></div>
+                <div class="flex gap-2">
+                  <button
+                    class="btn btn-outline btn-sm"
+                    onclick="app.openDebtorModal()"
+                  >
+                    📄 Print Debtors
+                  </button>
+                  <select
+                    id="feeClassFilter"
+                    class="form-control"
+                    style="width: 200px"
+                    onchange="app.loadFees()"
+                  ></select>
+                </div>
+              </div>
+              <div style="overflow-x: auto">
+                <table id="fee-table">
+                  <thead>
+                    <tr>
+                      <th>Student</th>
+                      <th>Type</th>
+                      <th>Total Fee</th>
+                      <th>Paid</th>
+                      <th>Balance</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="fee-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <!-- SETTINGS TAB -->
+          <div id="fee-tab-settings" class="hidden">
+            <div class="list-container" style="padding: 20px">
+              <div class="list-header">
+                <h2>Fee Configuration</h2>
+                <button class="btn btn-primary" onclick="app.saveFeeSettings()">
+                  Save Config
+                </button>
+              </div>
+              <div style="max-height: 500px; overflow-y: auto">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Class</th>
+                      <th>School Fee (₦)</th>
+                      <th>Registration (New Student) (₦)</th>
+                    </tr>
+                  </thead>
+                  <tbody id="fee-settings-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
 
-            <!-- 4. BATCH SCORE ENTRY (Subject-based: Class -> Subject -> Students) -->
-            <section id="section-batch-entry" class="hidden">
-                <div class="breadcrumbs">
-                    <span onclick="app.goHome()">Home</span> > <span id="batch-crumb-class"></span> > <span id="batch-crumb-subject"></span>
-                </div>
-                <div class="flex justify-between items-center" style="margin-bottom:20px;">
-                    <h2>Student Scores</h2>
-                    <div id="batch-actions">
-                        <!-- Add Student button for Admin -->
-                    </div>
-                </div>
-                <div class="table-container">
-                    <table>
-                        <thead><tr><th>Admin No</th><th>Name</th><th>CA (40)</th><th>Exam (60)</th><th>Total (100)</th></tr></thead>
-                        <tbody id="batch-rows"></tbody>
-                    </table>
-                </div>
-                <div style="margin-top:20px; text-align:right;">
-                    <button class="btn btn-primary" onclick="app.saveBatchScores()">Save All Scores</button>
-                </div>
-            </section>
+        <!-- 5. BATCH SCORE ENTRY (Exam & Mid-Term) -->
+        <section id="section-batch-entry" class="hidden">
+          <div class="breadcrumbs">
+            <span onclick="app.goHome()">Home</span> >
+            <span id="batch-crumb-dir"></span> >
+            <span id="batch-crumb-class"></span> >
+            <span id="batch-crumb-subject"></span>
+          </div>
+          <div
+            class="flex justify-between items-center"
+            style="margin-bottom: 20px"
+          >
+            <h2 id="batch-entry-title">Score Entry</h2>
+            <div id="batch-actions"></div>
+          </div>
+          <div class="list-container">
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr id="batch-headers"></tr>
+                </thead>
+                <tbody id="batch-rows"></tbody>
+              </table>
+            </div>
+          </div>
+          <div style="margin-top: 20px; text-align: right">
+            <button class="btn btn-primary" onclick="app.saveBatchScores()">
+              Save All Scores
+            </button>
+          </div>
+        </section>
 
-            <!-- 5. STUDENT LIST (For Class Teachers / Admin Check Scores) -->
-            <section id="section-student-list" class="hidden">
-                <div class="breadcrumbs">
-                    <span onclick="app.goHome()">Home</span> > <span id="std-list-crumb-cls"></span>
-                </div>
-                <div class="flex justify-between items-center" style="margin-bottom:20px;">
-                    <h2>Students</h2>
-                    <input type="text" id="std-search" class="form-control" placeholder="Search..." style="width:200px;" onkeyup="app.filterStudentList()">
-                </div>
-                <div class="table-container">
-                    <table>
-                        <thead><tr><th>Admin No</th><th>Name</th><th>Action</th></tr></thead>
-                        <tbody id="std-list-rows"></tbody>
-                    </table>
-                </div>
-            </section>
+        <!-- 6. ADMIN CLASS ROSTER (Exam & Mid-Term) -->
+        <section id="section-admin-roster" class="hidden">
+          <div class="breadcrumbs">
+            <span onclick="app.goHome()">Home</span> >
+            <span id="roster-crumb-type"></span> >
+            <span id="roster-crumb-class" class="font-bold"></span>
+          </div>
+          <div class="list-container">
+            <div class="list-header">
+              <h2 id="roster-title">Class Roster</h2>
+              <button
+                id="btn-roster-add-student"
+                class="btn btn-primary btn-sm"
+                onclick="app.openAddStudentModal()"
+              >
+                + Add Student
+              </button>
+            </div>
+            <div style="overflow-x: auto">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Admin No</th>
+                    <th>Name</th>
+                    <th>Gender</th>
+                    <th>Department</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-roster-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
 
-            <!-- 6. STUDENT DETAIL (All subjects for one student) -->
-            <section id="section-student-detail" class="hidden">
-                <div class="breadcrumbs">
-                    <span onclick="app.goHome()">Home</span> > <span id="det-crumb-cls"></span> > <span id="det-crumb-name"></span>
-                </div>
-                <div class="score-card">
-                    <div class="score-header">
-                        <div class="avatar" id="det-avatar">?</div>
-                        <div>
-                            <h2 id="det-name">Student Name</h2>
-                            <p class="text-secondary" id="det-info">Class Info</p>
-                        </div>
-                    </div>
-                    <form onsubmit="event.preventDefault(); app.saveStudentDetail();">
-                        <div id="det-score-rows"></div>
-                        <div class="flex justify-between" style="margin-top:20px; border-top:1px solid #eee; padding-top:20px;">
-                            <button type="button" class="btn btn-outline" onclick="app.closeStudentDetail()">Back</button>
-                            <div class="flex gap-2">
-                                <button type="button" class="btn btn-outline" onclick="app.openPrintModal()">Print</button>
-                                <button onclick="app.saveStudentScores()" class="btn btn-primary">Save Changes</button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </section>
-
-        </main>
+        <!-- 7. STUDENT DETAIL (Exam & Mid-Term) -->
+        <section id="section-student-detail" class="hidden">
+          <div class="breadcrumbs">
+            <span onclick="app.goHome()">Home</span> >
+            <span id="det-crumb-cls"></span> > <span id="det-crumb-name"></span>
+          </div>
+          <div class="list-container" style="padding: 20px">
+            <div
+              class="flex justify-between items-center"
+              style="margin-bottom: 20px"
+            >
+              <h2 id="det-name">Student Name</h2>
+              <button class="btn btn-outline" onclick="app.printResult()">
+                🖨️ Print Result
+              </button>
+            </div>
+            <table class="rp-table">
+              <thead id="det-score-head">
+                <!-- Headers injected via JS -->
+              </thead>
+              <tbody id="det-score-rows"></tbody>
+            </table>
+            <div class="flex gap-2" style="margin-top: 20px">
+              <button class="btn btn-primary" onclick="app.saveAdminOverride()">
+                Save Changes
+              </button>
+              <button class="btn btn-outline" onclick="app.goHome()">
+                Back
+              </button>
+            </div>
+          </div>
+        </section>
+      </main>
     </div>
 
     <!-- ================= MODALS ================= -->
+    <!-- Payment Modal -->
+    <div id="modal-pay" class="modal-overlay">
+      <div class="modal">
+        <h3>Record Fee Payment</h3>
+        <input type="hidden" id="payStudentId" />
+        <div class="form-group">
+          <label>Student Name</label>
+          <input
+            type="text"
+            id="payStudentName"
+            class="form-control"
+            readonly
+            style="background: #f1f5f9"
+          />
+        </div>
+        <div class="form-group">
+          <label>Student Type</label>
+          <div class="flex gap-4" style="margin-top: 5px">
+            <label style="font-weight: normal"
+              ><input
+                type="radio"
+                name="stdType"
+                value="Old"
+                checked
+                onchange="app.calcModalTotal()"
+              />
+              Old Student</label
+            >
+            <label style="font-weight: normal"
+              ><input
+                type="radio"
+                name="stdType"
+                value="New"
+                onchange="app.calcModalTotal()"
+              />
+              New Student (Pay Reg. Fee)</label
+            >
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Base Fee</label>
+            <input
+              type="text"
+              id="payBaseFee"
+              class="form-control"
+              readonly
+              style="background: #f1f5f9"
+            />
+          </div>
+          <div class="form-group">
+            <label>Registration Fee</label>
+            <input
+              type="text"
+              id="payRegFee"
+              class="form-control"
+              readonly
+              style="background: #f1f5f9"
+            />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Total Due</label>
+          <div
+            id="payTotalDue"
+            style="font-size: 1.2rem; font-weight: bold; color: var(--primary)"
+          >
+            ₦0
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Amount Paying (₦)</label>
+          <input
+            type="number"
+            id="payAmount"
+            class="form-control"
+            placeholder="0.00"
+          />
+        </div>
+        <div class="flex justify-between" style="margin-top: 20px">
+          <button class="btn btn-outline" onclick="app.closeModals()">
+            Cancel
+          </button>
+          <button class="btn btn-primary" onclick="app.confirmPayment()">
+            Save Payment
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Student Modal -->
     <div id="modal-add-student" class="modal-overlay">
-        <div class="modal">
-            <h3>Add New Student</h3>
-            <div class="form-group"><label>Full Name</label><input type="text" id="newStdName" class="form-control"></div>
-            <div class="form-group"><label>Admin ID</label><input type="text" id="newStdId" class="form-control"></div>
-            <div class="form-group"><label>Gender</label><select id="newStdGender" class="form-control"><option>Male</option><option>Female</option></select></div>
-            <div id="modal-dept-group" class="form-group hidden">
-                <label>Department</label>
-                <select id="newStdDept" class="form-control"><option value="Science">Science</option><option value="Art">Art</option><option value="Commercial">Commercial</option></select>
-            </div>
-            <div class="flex justify-between" style="margin-top:20px;">
-                <button class="btn btn-outline" onclick="app.closeModals()">Cancel</button>
-                <button class="btn btn-primary" onclick="app.addStudentConfirm()">Save</button>
-            </div>
+      <div class="modal">
+        <h3>Add New Student</h3>
+        <div class="form-group">
+          <label>Full Name</label
+          ><input type="text" id="newStdName" class="form-control" />
         </div>
+        <div class="form-group">
+          <label>Admin ID</label
+          ><input type="text" id="newStdId" class="form-control" />
+        </div>
+        <div class="form-group">
+          <label>Gender</label
+          ><select id="newStdGender" class="form-control">
+            <option>Male</option>
+            <option>Female</option>
+          </select>
+        </div>
+        <div id="modal-dept-group" class="form-group hidden">
+          <label>Department</label>
+          <select id="newStdDept" class="form-control">
+            <option value="Science">Science</option>
+            <option value="Art">Art</option>
+            <option value="Commercial">Commercial</option>
+          </select>
+        </div>
+        <div class="flex justify-between" style="margin-top: 20px">
+          <button class="btn btn-outline" onclick="app.closeModals()">
+            Cancel
+          </button>
+          <button class="btn btn-primary" onclick="app.addStudentConfirm()">
+            Save
+          </button>
+        </div>
+      </div>
     </div>
 
-    <div id="modal-print" class="modal-overlay">
-        <div class="modal">
-            <h3>Print Configuration</h3>
-            <div class="form-group"><label>Session</label><input type="text" id="printSession" value="2024/2025" class="form-control"></div>
-            <div class="form-group"><label>Term</label><select id="printTerm" class="form-control"><option>1st</option><option>2nd</option><option>3rd</option></select></div>
-            <div class="flex justify-between" style="margin-top:20px;">
-                <button class="btn btn-outline" onclick="app.closeModals()">Cancel</button>
-                <button class="btn btn-primary" onclick="app.printReport()">Print</button>
-            </div>
+    <!-- Debtors Modal -->
+    <div id="modal-debtors" class="modal-overlay">
+      <div class="modal">
+        <h3>Print Debtors Report</h3>
+        <div class="form-group">
+          <label>Select Class</label>
+          <select id="debtorsClassSelect" class="form-control">
+            <option value="ALL">All Classes</option>
+          </select>
         </div>
+        <div class="flex justify-between" style="margin-top: 20px">
+          <button class="btn btn-outline" onclick="app.closeModals()">
+            Cancel
+          </button>
+          <button class="btn btn-primary" onclick="app.generateDebtorReport()">
+            Generate
+          </button>
+        </div>
+      </div>
     </div>
 
-    <div id="toast" class="toast"><span id="toast-msg"></span></div>
+    <!-- Hidden Printable Area -->
     <div id="printable-area"></div>
 
-    <!-- ================= JAVASCRIPT LOGIC ================= -->
-        <script>
-        // --- CONSTANTS ---
-        const JSS_SUBJECTS = ['English', 'Mathematics', 'Basic Science', 'Social Studies', 'Civic Ed', 'PHE', 'BST', 'Creative Arts', 'Yoruba', 'French'];
-        const SSS_SUBJECTS = {
-            All: ['English', 'Mathematics', 'Civic Ed', 'Economics', 'Biology', 'Further Math', 'Agric Sci', 'Data Proc', 'Chemistry', 'Physics', 'Geography', 'Literature', 'Government', 'History', 'CRS/IRS', 'Yoruba', 'French', 'Accounting', 'Commerce'],
-            Science: ['English', 'Mathematics', 'Chemistry', 'Physics', 'Biology', 'Further Math', 'Geography', 'Agric Sci', 'Data Proc'],
-            Art: ['English', 'Mathematics', 'Literature', 'Government', 'History', 'CRS/IRS', 'Yoruba', 'French', 'Economics'],
-            Commercial: ['English', 'Mathematics', 'Accounting', 'Commerce', 'Economics', 'Data Proc', 'Office Practice']
-        };
-        const ALL_CLASSES = ['JSS1','JSS2','JSS3','SSS1','SSS2','SSS3'];
+    <!-- ================= JAVASCRIPT ================= -->
+    <script>
+      /* --- 1. CONFIGURATION & DATA --- */
+      const JSS_SUBJECTS = [
+        "English",
+        "Mathematics",
+        "Basic Science",
+        "Social Studies",
+        "Civic Ed",
+        "PHE",
+        "BST",
+        "Creative Arts",
+        "Yoruba",
+        "French",
+      ];
+      const SSS_SUBJECTS = {
+        All: [
+          "English",
+          "Mathematics",
+          "Civic Ed",
+          "Economics",
+          "Biology",
+          "Further Math",
+          "Agric Sci",
+          "Data Proc",
+          "Chemistry",
+          "Physics",
+          "Geography",
+          "Literature",
+          "Government",
+          "History",
+          "CRS/IRS",
+          "Yoruba",
+          "French",
+          "Accounting",
+          "Commerce",
+        ],
+        Science: [
+          "English",
+          "Mathematics",
+          "Chemistry",
+          "Physics",
+          "Biology",
+          "Further Math",
+          "Geography",
+          "Agric Sci",
+          "Data Proc",
+        ],
+        Art: [
+          "English",
+          "Mathematics",
+          "Literature",
+          "Government",
+          "History",
+          "CRS/IRS",
+          "Yoruba",
+          "French",
+          "Economics",
+        ],
+        Commercial: [
+          "English",
+          "Mathematics",
+          "Accounting",
+          "Commerce",
+          "Economics",
+          "Data Proc",
+          "Office Practice",
+        ],
+      };
+      const ALL_CLASSES = ["JSS1", "JSS2", "JSS3", "SSS1", "SSS2", "SSS3"];
 
-        // --- GOOGLE SHEETS SERVICE ---
-        const GoogleSheetService = {
-            // PASTE YOUR DEPLOYED WEB APP URL HERE
-            URL: 'https://script.google.com/macros/s/AKfycbw-GHQzYVauehu_C_0NICw8G2SaNnz1Bu7Ho7V4vPilEuwREzAZaidS10VPlOBB_Xyg/exec', 
-            
-            _post: async function(action, data = {}) {
-    const loader = document.getElementById('loader');
-    loader.style.display = 'flex'; // Show Loader
+      // --- 2. FEE MANAGEMENT SERVICE (Local Storage for Config Only) ---
+      const FeeService = {
+        KEYS: { CONFIG: "ps_fee_config" },
+        init: function () {
+          if (!localStorage.getItem(this.KEYS.CONFIG)) {
+            const defaults = {};
+            ALL_CLASSES.forEach((c) => {
+              defaults[c] = { schoolFee: 50000, regFee: 10000 };
+            });
+            localStorage.setItem(this.KEYS.CONFIG, JSON.stringify(defaults));
+          }
+        },
+        getConfig: function () {
+          return JSON.parse(localStorage.getItem(this.KEYS.CONFIG));
+        },
+        saveConfig: function (newConfig) {
+          localStorage.setItem(this.KEYS.CONFIG, JSON.stringify(newConfig));
+        },
+      };
 
-    try {
-        const response = await fetch(this.URL, {
-            method: 'POST',
-            body: JSON.stringify({ action, ...data }),
-        });
+      // --- 3. GOOGLE SHEETS SERVICE ---
+      const GoogleSheetService = {
+        URL: "https://script.google.com/macros/s/AKfycbw-GHQzYVauehu_C_0NICw8G2SaNnz1Bu7Ho7V4vPilEuwREzAZaidS10VPlOBB_Xyg/exec",
 
-        const json = await response.json();
-        return json;
-    } catch (error) {
-        console.error("API Error:", error);
-        return { status: 'error', message: 'Network error' };
-    } finally {
-        loader.style.display = 'none'; // Hide Loader
-    }
-},
+        _post: async function (action, data = {}) {
+          const loader = document.getElementById("loader");
+          loader.style.display = "flex";
+          try {
+            const response = await fetch(this.URL, {
+              method: "POST",
+              body: JSON.stringify({ action, ...data }),
+            });
+            return await response.json();
+          } catch (error) {
+            console.error("API Error:", error);
+            return { status: "error", message: "Network error" };
+          } finally {
+            loader.style.display = "none";
+          }
+        },
 
-            login: async function(name, pass) {
-                const res = await this._post('login', { name, password: pass });
-                if (res.status === 'success') {
-                    return res.user;
-                }
-                return null;
-            },
+        login: async function (name, pass) {
+          const res = await this._post("login", { name, password: pass });
+          return res.status === "success" ? res.user : null;
+        },
+        signup: async function (userObj) {
+          const res = await this._post("signup", userObj);
+          return res.status === "success";
+        },
+        loadStudents: async function (className) {
+          const res = await this._post("getStudents", { className });
+          return res.status === "success" ? res.students : [];
+        },
+        saveScores: async function (className, subject, scores) {
+          return await this._post("saveScores", {
+            className: className,
+            subject: subject,
+            scores: scores,
+          });
+        },
+        saveMidTermScores: async function (className, subject, scores) {
+          return await this._post("saveMidTermScores", {
+            className: className,
+            subject: subject,
+            scores: scores,
+          });
+        },
+        saveAdminScores: async function (adminNo, className, scores) {
+          return await this._post("saveSingleStudentScores", {
+            adminNo: adminNo,
+            className: className,
+            scores: scores,
+          });
+        },
+        getFullResult: async function (adminNo) {
+          const res = await this._post("getFullResult", { adminNo });
+          if (res.status === "success")
+            return { info: res.student, scores: res.scores };
+          return { info: {}, scores: {} };
+        },
+        addStudent: async function (stdData) {
+          const res = await this._post("addStudent", stdData);
+          return res.status === "success";
+        },
+        getAllStaff: async function () {
+          const res = await this._post("getTeachers", {});
+          return res.status === "success" ? res.teachers : [];
+        },
+        // --- FEE API CALLS ---
+        getFeeTransactions: async function () {
+          const res = await this._post("getFeeTransactions", {});
+          return res.status === "success" ? res.transactions : [];
+        },
+        saveFeeTransaction: async function (tx) {
+          return await this._post("saveFeeTransaction", tx);
+        },
+      };
 
-            signup: async function(userObj) {
-                const res = await this._post('signup', {
-                    title: userObj.title,
-                    firstName: userObj.firstName,
-                    lastName: userObj.lastName,
-                    pass: userObj.pass,
-                    role: userObj.role,
-                    assignedClass: userObj.assignedClass || "",
-                    subjects: userObj.subjects
-                });
-                return res.status === 'success';
-            },
+      // --- 4. APP CONTROLLER ---
+      const app = {
+        state: {
+          currentUser: null,
+          viewContext: {},
+          draftSubjects: [],
+          feeContext: {},
+        },
 
-            loadStudents: async function(className) {
-                const res = await this._post('getStudents', { className });
-                if (res.status === 'success') {
-                    return res.students;
-                }
-                return [];
-            },
+        init: function () {
+          FeeService.init();
+          const u = sessionStorage.getItem("currentUser");
+          if (u) {
+            this.state.currentUser = JSON.parse(u);
+            this.showDashboard();
+          } else {
+            document.getElementById("view-auth").classList.remove("hidden");
+          }
+          this.populateSubjects();
+        },
 
-            saveAdminUpdate: async function(adminNo, className, scores) {
-    return await this._post('saveSingleStudentScores', {
-        adminNo: adminNo,
-        className: className,
-        scores: scores
-    });
-},
+        getGrade: function (score) {
+          const s = parseFloat(score) || 0;
+          if (s >= 80) return { g: "A", c: "Distinction" };
+          if (s >= 70) return { g: "B", c: "Excellent" };
+          if (s >= 60) return { g: "BC", c: "Very Good" };
+          if (s >= 50) return { g: "C", c: "Good" };
+          if (s >= 40) return { g: "P", c: "Pass" };
+          return { g: "F", c: "Fail" };
+        },
 
-            saveScores: async function(user, subjectName, scores) {
-    // We use a "fallback" logic: check the user object first, then the global app state
-    const className = (user.viewContext && user.viewContext.cls) 
-                      ? user.viewContext.cls 
-                      : app.state.viewContext.cls;
+        // --- AUTH ---
+        switchAuthTab: function (t) {
+          document
+            .querySelectorAll(".tab-btn")
+            .forEach((b) => b.classList.remove("active"));
+          event.target.classList.add("active");
+          document
+            .getElementById("form-login")
+            .classList.toggle("hidden", t !== "login");
+          document
+            .getElementById("form-signup")
+            .classList.toggle("hidden", t !== "signup");
+        },
+        handleRoleChange: function () {
+          const r = document.getElementById("signupRole").value;
+          document
+            .getElementById("class-teacher-group")
+            .classList.toggle("hidden", r !== "Class Teacher");
+          document
+            .getElementById("subject-group")
+            .classList.toggle("hidden", r === "Admin" || r === "Head");
+        },
+        populateSubjects: function () {
+          const l = document.getElementById("subjectLevel").value;
+          const s = document.getElementById("subjectName");
+          const c = document.getElementById("subjectClass");
+          s.innerHTML = "<option disabled selected>Subject</option>";
+          c.innerHTML = "<option disabled selected>Class</option>";
+          if (!l) return;
+          const subs = l === "JSS" ? JSS_SUBJECTS : SSS_SUBJECTS.All;
+          subs.forEach(
+            (sub) => (s.innerHTML += `<option value="${sub}">${sub}</option>`),
+          );
+          if (l === "JSS")
+            c.innerHTML += `<option value="ALL JSS">ALL JSS</option><option value="JSS1">JSS1</option><option value="JSS2">JSS2</option><option value="JSS3">JSS3</option>`;
+          else
+            c.innerHTML += `<option value="ALL SSS">ALL SSS</option><option value="SSS1">SSS1</option><option value="SSS2">SSS2</option><option value="SSS3">SSS3</option>`;
+        },
+        addSubject: function () {
+          const s = document.getElementById("subjectName").value;
+          const c = document.getElementById("subjectClass").value;
+          if (!s || !c)
+            return this.showToast("Select subject and class", "error");
+          this.state.draftSubjects.push({ subject: s, class: c });
+          this.renderChips();
+        },
+        renderChips: function () {
+          const l = document.getElementById("chipList");
+          l.innerHTML = this.state.draftSubjects
+            .map(
+              (x, i) =>
+                `<div class="subject-chip">${x.subject} (${x.class}) <span onclick="app.state.draftSubjects.splice(${i},1);app.renderChips()">&times;</span></div>`,
+            )
+            .join("");
+        },
+        handleSignup: async function (e) {
+          e.preventDefault();
+          const title = document.getElementById("signupTitle").value;
+          const fname = document.getElementById("signupFirstName").value;
+          const lname = document.getElementById("signupLastName").value;
+          const role = document.getElementById("signupRole").value;
+          let cls =
+            role === "Class Teacher"
+              ? document.getElementById("signupClass").value
+              : "";
+          if (role === "Class Teacher" && !cls)
+            return this.showToast("Select assigned class", "error");
+          if (role === "Teacher" && this.state.draftSubjects.length === 0)
+            return this.showToast("Add subject", "error");
+          const u = {
+            title,
+            firstName: fname,
+            lastName: lname,
+            pass: document.getElementById("signupPass").value,
+            role,
+            assignedClass: cls,
+            subjects: [...this.state.draftSubjects],
+          };
+          const success = await GoogleSheetService.signup(u);
+          if (success) {
+            this.showToast("Account created! Please login.", "success");
+            this.switchAuthTab("login");
+            document.getElementById("form-signup").reset();
+            this.state.draftSubjects = [];
+            this.renderChips();
+          } else {
+            this.showToast("Signup failed", "error");
+          }
+        },
+        handleLogin: async function (e) {
+          e.preventDefault();
+          const name = `${document.getElementById("loginTitle").value} ${
+            document.getElementById("loginFirstName").value
+          } ${document.getElementById("loginLastName").value}`;
+          const u = await GoogleSheetService.login(
+            name,
+            document.getElementById("loginPass").value,
+          );
+          if (u) {
+            this.state.currentUser = u;
+            sessionStorage.setItem("currentUser", JSON.stringify(u));
+            this.showDashboard();
+          } else {
+            this.showToast("Invalid credentials", "error");
+          }
+        },
+        logout: function () {
+          sessionStorage.removeItem("currentUser");
+          window.location.reload();
+        },
 
-    if (!className) {
-        alert("Error: Class name not found. Please try reloading the student list.");
-        return false;
-    }
+        // --- DASHBOARD ---
+        showDashboard: function () {
+          document.getElementById("view-auth").classList.add("hidden");
+          document.getElementById("view-dashboard").classList.remove("hidden");
+          document.getElementById("user-name").textContent =
+            this.state.currentUser.name;
+          document.getElementById("user-role").textContent =
+            this.state.currentUser.role;
+          this.renderLanding();
+        },
+        renderLanding: function () {
+          const r = this.state.currentUser.role;
+          const land = document.getElementById("landing-grid");
+          land.innerHTML = "";
 
-    return await this._post('saveScores', {
-        user: user,
-        subject: subjectName,
-        className: className, 
-        scores: scores
-    });
-},
-            
-            loadFullResult: async function(adminNo) {
-                const res = await this._post('getFullResult', { adminNo });
-                if(res.status === 'success') {
-                    return { 
-                        info: res.student, 
-                        scores: res.scores 
-                    };
-                }
-                return { info: {}, scores: {} };
-            },
-
-            addStudent: async function(stdData) {
-                const res = await this._post('addStudent', stdData);
-                return res.status === 'success';
+          // --- CLASS TEACHER SECTION ---
+          if (r === "Class Teacher") {
+            const assignedClass = this.state.currentUser.assignedClass;
+            if (assignedClass) {
+              land.innerHTML += `
+                <div class="card" onclick="app.loadAdminRoster('${assignedClass}', 'exam')" style="border: 2px solid var(--primary); background: #f0f9ff;">
+                    <div class="card-content">
+                        <div class="card-icon">📝</div>
+                        <div class="card-title">My Class: ${assignedClass}</div>
+                        <div class="card-meta">Exam Results (CA + Exam)</div>
+                    </div>
+                    <div class="card-footer"><button class="btn btn-primary btn-sm w-full">View</button></div>
+                </div>
+                <div class="card" onclick="app.loadAdminRoster('${assignedClass}', 'midterm')" style="border: 2px solid var(--warning); background: #fffbeb;">
+                    <div class="card-content">
+                        <div class="card-icon">📊</div>
+                        <div class="card-title">My Class: ${assignedClass}</div>
+                        <div class="card-meta">Mid-Term Results</div>
+                    </div>
+                    <div class="card-footer"><button class="btn btn-primary btn-sm w-full">View</button></div>
+                </div>
+              `;
             }
-        };
+          }
 
-        // --- APP CONTROLLER ---
-        const app = {
-            state: {
-                currentUser: null,
-                viewContext: {}, 
-                draftSubjects: [],
-                currentDeptFilter: 'All'
-            },
-
-            init: function() {
-                // Removed MockDB.init() because we are using Google Sheets
-                const u = sessionStorage.getItem('currentUser');
-                if(u) {
-                    this.state.currentUser = JSON.parse(u);
-                    this.showDashboard();
-                } else document.getElementById('view-auth').classList.remove('hidden');
-                this.populateSubjects();
-            },
-
-            // --- AUTH ---
-            switchAuthTab: function(t) {
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                event.target.classList.add('active');
-                document.getElementById('form-login').classList.toggle('hidden', t!=='login');
-                document.getElementById('form-signup').classList.toggle('hidden', t!=='signup');
-            },
-            handleRoleChange: function() {
-                const r = document.getElementById('signupRole').value;
-                document.getElementById('class-teacher-group').classList.toggle('hidden', r!=='Class Teacher');
-                document.getElementById('subject-group').classList.toggle('hidden', r==='Admin'||r==='Head');
-            },
-            populateSubjects: function() {
-                const l = document.getElementById('subjectLevel').value;
-                const s = document.getElementById('subjectName');
-                const c = document.getElementById('subjectClass');
-                s.innerHTML = '<option disabled selected>Subject</option>';
-                c.innerHTML = '<option disabled selected>Class</option>';
-                if(!l) return;
-                const subs = l==='JSS' ? JSS_SUBJECTS : SSS_SUBJECTS.All;
-                subs.forEach(sub => s.innerHTML += `<option value="${sub}">${sub}</option>`);
-                if(l==='JSS') c.innerHTML += `<option value="ALL JSS">ALL JSS</option><option value="JSS1">JSS1</option><option value="JSS2">JSS2</option><option value="JSS3">JSS3</option>`;
-                else c.innerHTML += `<option value="ALL SSS">ALL SSS</option><option value="SSS1">SSS1</option><option value="SSS2">SSS2</option><option value="SSS3">SSS3</option>`;
-            },
-            addSubject: function() {
-                const s = document.getElementById('subjectName').value;
-                const c = document.getElementById('subjectClass').value;
-                if(!s||!c) return this.showToast('Select subject and class', 'error');
-                this.state.draftSubjects.push({subject:s, class:c});
-                this.renderChips();
-            },
-            renderChips: function() {
-                const l = document.getElementById('chipList');
-                l.innerHTML = this.state.draftSubjects.map((x,i) => `<div class="subject-chip">${x.subject} (${x.class}) <span onclick="app.state.draftSubjects.splice(${i},1);app.renderChips()">&times;</span></div>`).join('');
-            },
-            handleSignup: async function(e) {
-                e.preventDefault();
-                const title = document.getElementById('signupTitle').value;
-                const fname = document.getElementById('signupFirstName').value;
-                const lname = document.getElementById('signupLastName').value;
-                const role = document.getElementById('signupRole').value;
-                let cls = role === 'Class Teacher' ? document.getElementById('signupClass').value : '';
-    
-                if(role === 'Class Teacher' && !cls) return this.showToast('Select assigned class', 'error');
-                if(role === 'Teacher' && this.state.draftSubjects.length === 0) return this.showToast('Add subject', 'error');
-    
-                const u = { 
-                    name: `${title} ${fname} ${lname}`, 
-                    firstName: fname, 
-                    lastName: lname, 
-                    title: title, 
-                    pass: document.getElementById('signupPass').value, 
-                    role, 
-                    assignedClass: cls, 
-                    subjects: [...this.state.draftSubjects] 
-                };
-    
-                // CALL GOOGLE SHEETS SERVICE
-                const success = await GoogleSheetService.signup(u);
-    
-                if(success) {
-                    this.showToast('Account created! Logging you in...', 'success');
-        
-                    // --- AUTO-FILL LOGIN FORM ---
-                    document.getElementById('loginTitle').value = title;
-                    document.getElementById('loginFirstName').value = fname;
-                    document.getElementById('loginLastName').value = lname;
-        
-                    // --- SWITCH TO LOGIN TAB ---
-                    // We use a small timeout so the user sees the success toast first
-                    setTimeout(() => {
-                        this.switchAuthTab('login');
-                        // Clear the signup form for security
-                        document.getElementById('form-signup').reset();
-                        this.state.draftSubjects = [];
-                        this.renderChips();
-            
-                        // Focus on the password field for the user
-                        document.getElementById('loginPass').focus();
-                    }, 1500);
-        
-                } else {
-                    this.showToast('Signup failed', 'error');
-                }
-            },
-            handleLogin: async function(e) {
-                e.preventDefault();
-                const title = document.getElementById('loginTitle').value;
-                const fname = document.getElementById('loginFirstName').value;
-                const lname = document.getElementById('loginLastName').value;
-                const pass = document.getElementById('loginPass').value;
-                const name = `${title} ${fname} ${lname}`;
-                
-                // CALL GOOGLE SHEETS SERVICE
-                const u = await GoogleSheetService.login(name, pass);
-                if(u) {
-                    this.state.currentUser = u;
-                    sessionStorage.setItem('currentUser', JSON.stringify(u));
-                    this.showToast('Welcome!', 'success');
-                    setTimeout(() => this.showDashboard(), 500);
-                } else {
-                    this.showToast('Invalid credentials', 'error');
-                }
-            },
-            logout: function() {
-                sessionStorage.removeItem('currentUser');
-                window.location.reload();
-            },
-
-            // --- DASHBOARD & NAVIGATION ---
-            showDashboard: function() {
-                document.getElementById('view-auth').classList.add('hidden');
-                document.getElementById('view-dashboard').classList.remove('hidden');
-                document.getElementById('user-display-name').textContent = this.state.currentUser.name;
-                document.getElementById('user-display-role').textContent = this.state.currentUser.role + (this.state.currentUser.assignedClass ? ` (${this.state.currentUser.assignedClass})` : '');
-                this.renderLanding();
-            },
-
-            renderLanding: function() {
-                const r = this.state.currentUser.role;
-                const land = document.getElementById('section-landing');
-                land.innerHTML = '';
-
-                // 1. TEACHER (Subject Only)
-                if(r === 'Teacher') {
-                    land.innerHTML = `<h2 style="margin-bottom:15px;">My Classes</h2><div id="landing-grid" class="dashboard-grid"></div>`;
-                    this.renderClassCards('landing-grid', false);
-                }
-                // 2. CLASS TEACHER (Hybrid)
-                else if(r === 'Class Teacher') {
-                    land.innerHTML = `
-                        <div class="card card-lg" onclick="app.loadStudentList('${this.state.currentUser.assignedClass}', 'ClassTeacher')">
-                            <div><h2 style="color:var(--primary);">My Class</h2><p class="text-secondary">View results for ${this.state.currentUser.assignedClass}</p></div>
-                            <div style="font-size:2rem;">🏫</div>
+          // --- ADMIN/HEAD SECTION ---
+          if (r === "Admin" || r === "Head") {
+            land.innerHTML += `
+                        <div class="card" onclick="app.loadClassSelectionForAdmin('exam')">
+                            <div class="card-content"><div class="card-icon">📝</div><div class="card-title">Manage Exam Results</div><div class="card-meta">View & Edit Class Rosters</div></div>
+                            <div class="card-footer"><button class="btn btn-primary btn-sm w-full">Open</button></div>
                         </div>
-                        <h3 style="margin:20px 0 10px;">Other Classes (Teaching)</h3>
-                        <div id="landing-grid" class="dashboard-grid"></div>
-                    `;
-                    this.renderClassCards('landing-grid', true);
-                }
-                // 3. ADMIN / HEAD (Two Sections)
-                else {
-                    land.innerHTML = `
-                        <div class="grid-2">
-                            <div class="card card-lg" onclick="app.enterAdminMode('manage')" style="border-left-color:var(--success);">
-                                <div><h2 style="color:var(--success);">Manage Students</h2><p class="text-secondary">Add students & Enter Scores</p></div>
-                                <div style="font-size:2rem;">📂</div>
-                            </div>
-                            <div class="card card-lg" onclick="app.enterAdminMode('check')" style="border-left-color:var(--warning);">
-                                <div><h2 style="color:var(--warning);">Check Scores</h2><p class="text-secondary">View Student Profiles & Results</p></div>
-                                <div style="font-size:2rem;">📊</div>
-                            </div>
+                        <div class="card" onclick="app.loadClassSelectionForAdmin('midterm')">
+                            <div class="card-content"><div class="card-icon">📊</div><div class="card-title">Manage Mid-Term Results</div><div class="card-meta">View & Edit Class Rosters</div></div>
+                            <div class="card-footer"><button class="btn btn-primary btn-sm w-full">Open</button></div>
+                        </div>
+                        <div class="card" onclick="app.loadStaffList()">
+                            <div class="card-content"><div class="card-icon">👥</div><div class="card-title">All Staff</div><div class="card-meta">View Staff Directory</div></div>
+                            <div class="card-footer"><button class="btn btn-primary btn-sm w-full">View</button></div>
+                        </div>
+                        <div class="card" onclick="app.loadPerformance()">
+                            <div class="card-content"><div class="card-icon">🏆</div><div class="card-title">Performance</div><div class="card-meta">Top Students Stats</div></div>
+                            <div class="card-footer"><button class="btn btn-primary btn-sm w-full">View</button></div>
+                        </div>
+                        <div class="card" onclick="app.loadFees()">
+                            <div class="card-content"><div class="card-icon">💰</div><div class="card-title">Fee Management</div><div class="card-meta">Collect & Configure</div></div>
+                            <div class="card-footer"><button class="btn btn-primary btn-sm w-full">Open</button></div>
                         </div>
                     `;
-                }
-            },
+          }
 
-            // Renders Class Cards based on Subject List
-            renderClassCards: function(containerId, excludeAssigned) {
-                const cont = document.getElementById(containerId);
-                if(!cont) return;
-                
-                const visibleClasses = new Set();
-                this.state.currentUser.subjects.forEach(s => {
-                    if(s.class==='ALL JSS') ['JSS1','JSS2','JSS3'].forEach(c=>visibleClasses.add(c));
-                    else if(s.class==='ALL SSS') ['SSS1','SSS2','SSS3'].forEach(c=>visibleClasses.add(c));
-                    else visibleClasses.add(s.class);
-                });
+          // --- DIRECTORIES ---
+          land.innerHTML += `
+            <div class="card" onclick="app.loadClassList('exam')">
+                <div class="card-content"><div class="card-icon">⌨️</div><div class="card-title">Exam Directory</div><div class="card-meta">Enter Exam Scores</div></div>
+                <div class="card-footer"><button class="btn btn-outline btn-sm w-full">Open</button></div>
+            </div>
+            <div class="card" onclick="app.loadClassList('midterm')">
+                <div class="card-content"><div class="card-icon">⌨️</div><div class="card-title">Mid-Term Directory</div><div class="card-meta">Enter Mid-Term Scores</div></div>
+                <div class="card-footer"><button class="btn btn-outline btn-sm w-full">Open</button></div>
+            </div>
+          `;
+        },
 
-                if(excludeAssigned) visibleClasses.delete(this.state.currentUser.assignedClass);
+        // --- NAVIGATION ---
+        showSection: function (id) {
+          document
+            .querySelectorAll("main section")
+            .forEach((s) => s.classList.add("hidden"));
+          document.getElementById(id).classList.remove("hidden");
+        },
+        goHome: function () {
+          this.showSection("section-landing");
+          this.renderLanding();
+        },
+        closeModals: function () {
+          document
+            .querySelectorAll(".modal-overlay")
+            .forEach((m) => (m.style.display = "none"));
+        },
 
-                Array.from(visibleClasses).sort().forEach(cls => {
-                    const isJSS = cls.startsWith('JSS');
-                    cont.innerHTML += `
-                        <div class="card" onclick="app.loadSubjectList('${cls}')">
-                            <div class="flex justify-between">
-                                <h3>${cls}</h3>
-                                <span class="badge ${isJSS?'badge-jss':'badge-sss'}">${isJSS?'JSS':'SSS'}</span>
-                            </div>
-                            <p class="text-secondary">Select Subject</p>
-                        </div>`;
-                });
-            },
+        // --- STAFF LIST ---
+        loadStaffList: async function () {
+          this.showSection("section-staff");
+          const staff = await GoogleSheetService.getAllStaff();
+          const tbody = document.getElementById("staff-tbody");
+          tbody.innerHTML = "";
+          staff.forEach((member) => {
+            const subjects =
+              Array.isArray(member.subjects) && member.subjects.length > 0
+                ? member.subjects
+                    .map((s) => `${s.subject} (${s.class})`)
+                    .join(", ")
+                : "N/A";
+            tbody.innerHTML += `
+                <tr>
+                    <td><strong>${member.name}</strong></td>
+                    <td><span class="badge">${member.role}</span></td>
+                    <td>${member.assignedClass || "-"}</td>
+                    <td style="font-size: 0.85rem; color: var(--secondary);">${subjects}</td>
+                </tr>
+              `;
+          });
+        },
 
-            // --- FLOWS ---
+        // --- PERFORMANCE ---
+        loadPerformance: async function () {
+          this.showSection("section-performance");
+          document.getElementById("perf-tbody").innerHTML =
+            `<tr><td colspan="4" class="text-center">Performance analysis requires backend access to all data.</td></tr>`;
+        },
 
-            // 1. TEACHER / ADMIN MANAGE: Select Class
-            enterAdminMode: function(mode) {
-                this.state.viewContext.mode = mode;
-                if(mode === 'manage') {
-                    document.getElementById('list-title').textContent = "Select Class to Manage";
-                    document.getElementById('breadcrumb-action').textContent = "Manage Students";
-                    document.getElementById('class-grid').innerHTML = '';
-                    ALL_CLASSES.forEach(cls => {
-                         document.getElementById('class-grid').innerHTML += `<div class="card" onclick="app.loadSubjectList('${cls}')"><h3>${cls}</h3><p>Manage Subjects</p></div>`;
-                    });
-                    this.showSection('section-class-list');
-                } else {
-                    document.getElementById('list-title').textContent = "Select Class to View";
-                    document.getElementById('breadcrumb-action').textContent = "Check Scores";
-                    document.getElementById('class-grid').innerHTML = '';
-                    ALL_CLASSES.forEach(cls => {
-                         document.getElementById('class-grid').innerHTML += `<div class="card" onclick="app.loadStudentList('${cls}', 'Admin')"><h3>${cls}</h3><p>View Students</p></div>`;
-                    });
-                    this.showSection('section-class-list');
-                }
-            },
+        // --- ADMIN MANAGE CLASSES (Split Logic) ---
+        loadClassSelectionForAdmin: function (resultType) {
+          this.state.viewContext.resultType = resultType;
+          this.loadClassList("admin-manage");
+        },
 
-            // 2. SELECT SUBJECT LIST (Used by Teacher, Class Teacher, Admin Manage)
-            loadSubjectList: function(clsName) {
-                this.state.viewContext.cls = clsName;
-                document.getElementById('crumb-class-name').textContent = clsName;
-                
-                const filterContainer = document.getElementById('dept-filter-container');
-                if (clsName.startsWith('SSS') && this.state.viewContext.mode === 'manage') {
-                    filterContainer.classList.remove('hidden');
-                    filterContainer.style.display = 'flex';
-                    this.state.currentDeptFilter = 'All';
-                    this.updateDeptButtons('All');
-                } else {
-                    filterContainer.classList.add('hidden');
-                    filterContainer.style.display = 'none';
-                }
+        loadAdminRoster: async function (cls, resultType) {
+          this.state.viewContext.cls = cls;
+          this.state.viewContext.resultType =
+            resultType || this.state.viewContext.resultType;
 
-                this.renderSubjectGrid(clsName);
-                this.showSection('section-subject-list');
-            },
+          this.showSection("section-admin-roster");
+          document.getElementById("roster-crumb-class").textContent = cls;
+          document.getElementById("roster-crumb-type").textContent =
+            this.state.viewContext.resultType === "midterm"
+              ? "Mid-Term Results"
+              : "Exam Results";
+          document.getElementById("roster-title").textContent =
+            `${cls} - ${this.state.viewContext.resultType.toUpperCase()} Roster`;
 
-            // DEPARTMENT FILTER LOGIC (ADMIN ONLY)
-            filterSSSSubjects: function(dept, btnElement) {
-                this.state.currentDeptFilter = dept;
-                this.updateDeptButtons(dept);
-                this.renderSubjectGrid(this.state.viewContext.cls);
-            },
+          const isClassTeacher =
+            this.state.currentUser.role === "Class Teacher";
+          const addBtn = document.getElementById("btn-roster-add-student");
+          if (addBtn) {
+            addBtn.style.display = isClassTeacher ? "none" : "inline-flex";
+          }
 
-            updateDeptButtons: function(activeDept) {
-                document.querySelectorAll('.btn-filter').forEach(btn => {
-                    if(btn.innerText === activeDept) btn.classList.add('active');
-                    else btn.classList.remove('active');
-                });
-            },
+          const stds = await GoogleSheetService.loadStudents(cls);
+          const tbody = document.getElementById("admin-roster-tbody");
+          tbody.innerHTML = "";
 
-            renderSubjectGrid: function(clsName) {
-                const grid = document.getElementById('subject-grid');
-                grid.innerHTML = '';
-
-                let subsToShow = [];
-
-                // LOGIC: Admin Mode vs Teacher Mode
-                if (this.state.viewContext.mode === 'manage') {
-                    if (clsName.startsWith('JSS')) {
-                        subsToShow = JSS_SUBJECTS;
-                    } else {
-                        subsToShow = SSS_SUBJECTS[this.state.currentDeptFilter] || SSS_SUBJECTS.All;
-                    }
-                } else {
-                    // TEACHER MODE: Show only what user teaches
-                    const userSubs = this.state.currentUser.subjects
-                        .filter(s => s.class === clsName || (s.class === 'ALL JSS' && clsName.startsWith('JSS')) || (s.class === 'ALL SSS' && clsName.startsWith('SSS')))
-                        .map(s => s.subject);
-                    subsToShow = [...new Set(userSubs)];
-                }
-
-                if(subsToShow.length === 0) {
-                    grid.innerHTML = '<p style="grid-column:1/-1; text-align:center;">No subjects found.</p>';
-                } else {
-                    subsToShow.forEach(sub => {
-                        grid.innerHTML += `<div class="card" onclick="app.loadBatchEntry('${clsName}', '${sub}')"><h3>${sub}</h3><p>Enter Scores</p></div>`;
-                    });
-                }
-            },
-
-            // 3. BATCH ENTRY (Subject-based)
-            loadBatchEntry: async function(cls, sub) {
-                this.state.viewContext.cls = cls;
-                this.state.viewContext.sub = sub;
-                document.getElementById('batch-crumb-class').textContent = cls;
-                document.getElementById('batch-crumb-subject').textContent = sub;
-
-                const acts = document.getElementById('batch-actions');
-                if (this.state.currentUser.role === 'Admin' || this.state.currentUser.role === 'Head') {
-                    acts.innerHTML = `<button class="btn btn-primary" onclick="app.openAddStudentModal('${cls}')">+ Add Student</button>`;
-                } else {
-                    acts.innerHTML = '';
-                }
-
-                // CALL GOOGLE SHEETS SERVICE TO LOAD STUDENTS
-                const stds = await GoogleSheetService.loadStudents(cls);
-
-                const tbody = document.getElementById('batch-rows');
-                tbody.innerHTML = '';
-                
-                if(stds && stds.length > 0) {
-                    stds.forEach(s => {
-                        const score = s.scores[sub] || {ca:'', exam:''};
-                        const total = (parseInt(score.ca)||0) + (parseInt(score.exam)||0);
-                        tbody.innerHTML += `
-                            <tr data-sid="${s.id}">
-                                <td>${s.id}</td>
-                                <td>${s.name}</td>
-                                <td><input type="number" class="score-input-mini input-ca" min="0" max="40" value="${score.ca}"></td>
-                                <td><input type="number" class="score-input-mini input-exam" min="0" max="60" value="${score.exam}"></td>
-                                <td><span class="total-mini">${total}</span></td>
-                            </tr>
-                        `;
-                    });
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No students found in this class.</td></tr>';
-                }
-
-                // Auto calc listeners
-                document.querySelectorAll('.score-input-mini').forEach(inp => {
-                    inp.addEventListener('input', e => {
-                        const r = e.target.closest('tr');
-                        const ca = parseInt(r.querySelector('.input-ca').value)||0;
-                        const ex = parseInt(r.querySelector('.input-exam').value)||0;
-                        r.querySelector('.total-mini').textContent = ca + ex;
-                    });
-                });
-
-                this.showSection('section-batch-entry');
-            },
-
-            saveBatchScores: async function() {
-    const rows = document.querySelectorAll('#batch-rows tr');
-    const scores = {};
-    const subjectName = this.state.viewContext.sub;
-
-    rows.forEach(row => {
-        const sid = row.dataset.sid;
-        const ca = row.querySelector('.input-ca').value;
-        const exam = row.querySelector('.input-exam').value;
-        if(sid) {
-            scores[sid] = { ca: ca || 0, exam: exam || 0 };
-        }
-    });
-
-    const success = await GoogleSheetService.saveScores(this.state.user, subjectName, scores);
-    
-    if(success) {
-        this.showToast('Scores saved successfully to Google Sheets', 'success');
-        // Refresh the student list to show updated totals
-        this.loadBatchEntry(this.state.viewContext.cls, subjectName);
-    } else {
-        this.showToast('Failed to save scores', 'error');
-    }
-},
-
-            // 4. STUDENT LIST (For Class Teachers / Admin Check Scores)
-            loadStudentList: async function(cls, mode) {
-                this.state.viewContext.cls = cls;
-                this.state.viewContext.mode = mode; 
-                document.getElementById('std-list-crumb-cls').textContent = cls;
-
-                // CALL GOOGLE SHEETS SERVICE
-                const stds = await GoogleSheetService.loadStudents(cls);
-
-                const tbody = document.getElementById('std-list-rows');
-                tbody.innerHTML = '';
-                
-                if(stds && stds.length > 0) {
-                    stds.forEach(s => {
-                        tbody.innerHTML += `<tr><td>${s.id}</td><td>${s.name}</td><td><button class="btn btn-sm btn-outline" onclick="app.loadStudentDetail('${s.id}')">View Profile</button></td></tr>`;
-                    });
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">No students found.</td></tr>';
-                }
-                this.showSection('section-student-list');
-            },
-
-            filterStudentList: function() {
-                const q = document.getElementById('std-search').value.toLowerCase();
-                const rows = document.querySelectorAll('#std-list-rows tr');
-                rows.forEach(r => {
-                    r.style.display = r.innerText.toLowerCase().includes(q) ? '' : 'none';
-                });
-            },
-
-            // 5. STUDENT DETAIL (All subjects, Permission based editing)
-            loadStudentDetail: async function(sid) {
-                // CALL GOOGLE SHEETS SERVICE
-                const result = await GoogleSheetService.loadFullResult(sid);
-                
-                if(!result || !result.info) {
-                    this.showToast('Error loading student data', 'error');
-                    return;
-                }
-
-                const s = result.info;
-                s.scores = result.scores; // Attach scores to student object
-                this.state.viewContext.sid = sid;
-                
-                document.getElementById('det-crumb-cls').textContent = s.class;
-                document.getElementById('det-crumb-name').textContent = s.name;
-                document.getElementById('det-name').textContent = s.name;
-                document.getElementById('det-info').textContent = `ID: ${s.id} ${s.dept ? '| Dept: '+s.dept : ''}`;
-                document.getElementById('det-avatar').textContent = s.name.substring(0,2).toUpperCase();
-
-                const u = this.state.currentUser;
-                const isJSS = s.class.startsWith('JSS');
-                const allSubs = isJSS ? JSS_SUBJECTS : SSS_SUBJECTS.All;
-
-                const container = document.getElementById('det-score-rows');
-                container.innerHTML = '';
-
-                allSubs.forEach(sub => {
-                    const score = s.scores[sub] || {ca:'', exam:''};
-                    const total = (parseInt(score.ca)||0) + (parseInt(score.exam)||0);
-
-                    let canEdit = false;
-                    if(u.role === 'Admin' || u.role === 'Head') canEdit = true;
-                    else if (u.role === 'Class Teacher' && u.subjects.some(subj => subj.subject === sub)) canEdit = true;
-
-                    const ro = canEdit ? '' : 'disabled';
-                    const lbl = !canEdit ? '<span class="readonly-badge">Read-only</span>' : '';
-
-                    container.innerHTML += `
-                        <div class="score-row">
-                            <div class="subject-label">${sub} ${lbl}</div>
-                            <div><input type="number" class="score-input input-ca" min="0" max="40" value="${score.ca}" ${ro}></div>
-                            <div><input type="number" class="score-input input-exam" min="0" max="60" value="${score.exam}" ${ro}></div>
-                            <div style="font-weight:bold;text-align:center;">${total||'-'}</div>
-                        </div>
+          if (stds && stds.length > 0) {
+            stds.forEach((s) => {
+              tbody.innerHTML += `
+                        <tr>
+                            <td>${s.id}</td>
+                            <td><strong>${s.name}</strong></td>
+                            <td>${s.gender}</td>
+                            <td>${s.dept || "-"}</td>
+                            <td>
+                                <button class="btn btn-primary btn-sm" onclick="app.loadStudentDetail('${s.id}')">
+                                    View Results
+                                </button>
+                            </td>
+                        </tr>
                     `;
-                });
-                
-                // Listeners
-                document.querySelectorAll('.score-input').forEach(inp => {
-                    inp.addEventListener('input', e => {
-                        const r = e.target.closest('.score-row');
-                        const ca = r.querySelector('.input-ca').value;
-                        const ex = r.querySelector('.input-exam').value;
-                        r.lastElementChild.textContent = (parseInt(ca)||0)+(parseInt(ex)||0);
-                    });
-                });
+            });
+          } else {
+            tbody.innerHTML =
+              '<tr><td colspan="5" class="text-center">No students found.</td></tr>';
+          }
+        },
 
-                this.showSection('section-student-detail');
-            },
+        // --- DIRECTORY (Score Entry) ---
+        loadClassList: function (mode) {
+          this.state.viewContext.mode = mode;
+          let classesToShow = [];
+          const r = this.state.currentUser.role;
 
-            saveStudentDetail: async function() {
-                const sid = this.state.viewContext.sid;
-                const u = this.state.currentUser;
-                const rows = document.querySelectorAll('#det-score-rows .score-row');
-                const updates = {};
+          if (r === "Class Teacher") {
+            classesToShow.push(this.state.currentUser.assignedClass);
+            this.state.currentUser.subjects.forEach((s) => {
+              if (s.class === "ALL JSS")
+                classesToShow.push("JSS1", "JSS2", "JSS3");
+              else if (s.class === "ALL SSS")
+                classesToShow.push("SSS1", "SSS2", "SSS3");
+              else if (!classesToShow.includes(s.class))
+                classesToShow.push(s.class);
+            });
+          } else if (r === "Teacher") {
+            this.state.currentUser.subjects.forEach((s) => {
+              if (s.class === "ALL JSS")
+                classesToShow.push("JSS1", "JSS2", "JSS3");
+              else if (s.class === "ALL SSS")
+                classesToShow.push("SSS1", "SSS2", "SSS3");
+              else if (!classesToShow.includes(s.class))
+                classesToShow.push(s.class);
+            });
+          } else {
+            classesToShow = ALL_CLASSES;
+          }
 
-                rows.forEach(r => {
-                    const labelDiv = r.querySelector('.subject-label');
-                    const sub = labelDiv.firstChild.textContent.trim();
-                    const ca = r.querySelector('.input-ca').value;
-                    const ex = r.querySelector('.input-exam').value;
+          classesToShow = [...new Set(classesToShow)].sort();
 
-                    let canEdit = false;
-                    if(u.role==='Admin'||u.role==='Head') canEdit = true;
-                    else if(u.role==='Class Teacher' && u.subjects.some(s=>s.subject===sub)) canEdit = true;
+          const grid = document.getElementById("landing-grid");
+          this.showSection("section-landing");
 
-                    if(canEdit) {
-                        updates[sub] = { ca: parseInt(ca)||0, exam: parseInt(ex)||0 };
-                    }
-                });
+          let title =
+            mode === "midterm"
+              ? "Mid-Term Directory"
+              : mode === "admin-manage"
+                ? "Select Class to Manage"
+                : "Exam Directory";
+          grid.innerHTML = `<div class="breadcrumbs"><span onclick="app.goHome()">Home</span> > <span>${title}</span></div>`;
 
-                // CALL GOOGLE SHEETS SERVICE TO SAVE
-                // Note: For student detail, we save to the specific subject sheets that were edited
-                // The backend `saveScores` handles splitting updates into subject sheets automatically
-                
-                const success = await GoogleSheetService.saveScores(u, this.state.viewContext.cls, updates);
+          if (mode === "admin-manage") {
+            classesToShow.forEach((cls) => {
+              grid.innerHTML += `
+                    <div class="card" onclick="app.loadAdminRoster('${cls}', '${this.state.viewContext.resultType}')">
+                        <div class="card-content"><div class="card-title">${cls}</div><div class="card-meta">View Student List</div></div>
+                        <div class="card-footer"><button class="btn btn-outline btn-sm w-full">Select</button></div>
+                    </div>
+                `;
+            });
+          } else {
+            classesToShow.forEach((cls) => {
+              grid.innerHTML += `
+                    <div class="card" onclick="app.loadSubjectList('${cls}')">
+                        <div class="card-content"><div class="card-title">${cls}</div><div class="card-meta">Manage Scores</div></div>
+                        <div class="card-footer"><button class="btn btn-outline btn-sm w-full">Select</button></div>
+                    </div>
+                `;
+            });
+          }
+        },
 
-                if(success) {
-                    this.showToast('Changes Saved', 'success');
-                } else {
-                    this.showToast('Error saving changes', 'error');
-                }
-            },
+        loadSubjectList: function (clsName) {
+          this.state.viewContext.cls = clsName;
+          const r = this.state.currentUser.role;
+          const isJSS = clsName.startsWith("JSS");
+          let subsToShow = [];
 
-            // Add this new function to the 'app' object
+          if (r === "Admin" || r === "Head") {
+            subsToShow = isJSS ? JSS_SUBJECTS : SSS_SUBJECTS.All;
+          } else {
+            subsToShow = this.state.currentUser.subjects
+              .filter(
+                (s) =>
+                  s.class === clsName ||
+                  (s.class === "ALL JSS" && isJSS) ||
+                  (s.class === "ALL SSS" && !isJSS),
+              )
+              .map((s) => s.subject);
+          }
 
-            saveStudentScores: async function() {
-    const adminNo = this.state.printAdminNo; 
-    const className = document.getElementById('res-class').textContent;
-    const rows = document.querySelectorAll('#res-table-body tr');
-    const scores = {};
-
-    rows.forEach(row => {
-        const sub = row.cells[0].textContent;
-        const ca = row.querySelector('.input-ca').value;
-        const exam = row.querySelector('.input-exam').value;
-        if(sub) {
-            scores[sub] = { ca: ca || 0, exam: exam || 0 };
-        }
-    });
-
-    // This calls the Admin-specific saving logic
-    const success = await GoogleSheetService._post('saveSingleStudentScores', {
-        adminNo: adminNo,
-        className: className,
-        scores: scores
-    });
-    
-    if(success.status === 'success') {
-        this.showToast('Admin override saved successfully!', 'success');
-    } else {
-        this.showToast('Error saving admin scores', 'error');
-    }
-},
-
-            closeStudentDetail: function() {
-                this.loadStudentList(this.state.viewContext.cls, this.state.viewContext.mode);
-            },
-
-            // --- UTILS ---
-            showSection: function(id) {
-                document.querySelectorAll('main section').forEach(s => s.classList.add('hidden'));
-                document.getElementById(id).classList.remove('hidden');
-            },
-            goHome: function() {
-                this.showSection('section-landing');
-            },
-            openAddStudentModal: function(cls) {
-                this.state.viewContext.tempClass = cls;
-                document.getElementById('modal-add-student').style.display = 'flex';
-                document.getElementById('modal-dept-group').classList.toggle('hidden', !cls.startsWith('SSS'));
-            },
-            addStudentConfirm: async function() {
-                const name = document.getElementById('newStdName').value;
-                const id = document.getElementById('newStdId').value;
-                const gender = document.getElementById('newStdGender').value;
-                const dept = document.getElementById('newStdDept').value;
-                if(!name||!id) return this.showToast('Missing fields', 'error');
-
-                const stdData = {
-                    id, name, gender,
-                    class: this.state.viewContext.tempClass,
-                    dept: this.state.viewContext.tempClass.startsWith('SSS') ? dept : ''
-                };
-
-                // CALL GOOGLE SHEETS SERVICE
-                const success = await GoogleSheetService.addStudent(stdData);
-
-                if(success) {
-                    this.showToast('Student Added', 'success');
-                    this.closeModals();
-                    // Refresh current view
-                    if(this.state.viewContext.sub) this.loadBatchEntry(this.state.viewContext.cls, this.state.viewContext.sub);
-                    else this.loadStudentList(this.state.viewContext.cls, 'Admin');
-                } else {
-                    this.showToast('Error adding student', 'error');
-                }
-            },
-            openPrintModal: function() {
-                document.getElementById('modal-print').style.display='flex';
-            },
-            closeModals: function() {
-                document.querySelectorAll('.modal-overlay').forEach(m=>m.style.display='none');
-            },
-            
-                        // --- FINAL PRINT FUNCTION (DEPARTMENT FILTERING FOR SSS) ---
-            printReport: async function() {
-                const session = document.getElementById('printSession').value;
-                const term = document.getElementById('printTerm').value;
-                const sid = this.state.printAdminNo || this.state.viewContext.sid;
-                
-                const result = await GoogleSheetService.loadFullResult(sid);
-                if (!result || !result.info) return this.showToast('Error loading report', 'error');
-
-                const s = result.info;
-                const scores = result.scores;
-                const isJSS = s.class.startsWith('JSS');
-
-                // --- SMART SUBJECT LIST SELECTION ---
-                let subjectsList;
-                if (isJSS) {
-                    subjectsList = JSS_SUBJECTS;
-                } else {
-                    // For SSS, check the student's department.
-                    // If 'Science', use Science list. If 'Art', use Art list.
-                    // If no department set, default to 'All'.
-                    if (s.dept && SSS_SUBJECTS[s.dept]) {
-                        subjectsList = SSS_SUBJECTS[s.dept];
-                    } else {
-                        subjectsList = SSS_SUBJECTS.All;
-                    }
-                }
-                // ----------------------------------------------
-
-                // --- GRADING LOGIC ---
-                const getGradeInfo = (total) => {
-                    if (isJSS) {
-                        if (total >= 80) return { g: 'A', c: 'Distinction' };
-                        if (total >= 70) return { g: 'B',  c: 'Excellent' };
-                        if (total >= 60) return { g: 'BC', c: 'Very Good' };
-                        if (total >= 50) return { g: 'C',  c: 'Good' };
-                        if (total >= 40) return { g: 'P',  c: 'Pass' };
-                        return { g: 'F', c: 'Fail' };
-                    } else {
-                        if (total >= 80) return { g: 'A1', c: 'Excellent' };
-                        if (total >= 75) return { g: 'B2', c: 'Very Good' };
-                        if (total >= 70) return { g: 'B3', c: 'Good' };
-                        if (total >= 65) return { g: 'C4', c: 'Credit' };
-                        if (total >= 60) return { g: 'C5', c: 'Credit' };
-                        if (total >= 50) return { g: 'C6', c: 'Credit' };
-                        if (total >= 45) return { g: 'D7', c: 'Pass' };
-                        if (total >= 40) return { g: 'E8', c: 'Pass' };
-                        return { g: 'F9', c: 'Fail' };
-                    }
-                };
-
-                // --- CALCULATE TOTAL & PERCENTAGE ---
-                let grandTotalScore = 0;
-                let validSubjectCount = 0;
-
-                subjectsList.forEach(sub => {
-                    const sc = scores[sub] || { ca: '', exam: '' };
-                    if (sc.ca !== '' && sc.exam !== '') {
-                        const total = (Number(sc.ca) || 0) + (Number(sc.exam) || 0);
-                        grandTotalScore += total;
-                        validSubjectCount++;
-                    }
-                });
-
-                const overallPercentage = validSubjectCount > 0 ? (grandTotalScore / validSubjectCount).toFixed(1) : 0;
-
-                // --- PRINCIPAL'S COMMENT ---
-                let principalComment = "";
-                if (overallPercentage >= 80) principalComment = "This is an exceptional performance";
-                else if (overallPercentage >= 70) principalComment = "This is a resourceful child";
-                else if (overallPercentage >= 60) principalComment = "This is an encouraging performance";
-                else if (overallPercentage >= 50) principalComment = "This is a promising child";
-                else if (overallPercentage >= 40) principalComment = "This result is below average";
-                else principalComment = "This is a very poor performance";
-
-                // --- TEACHER'S COMMENT ---
-                const teacherComments = [
-                    "has shown excellent ability to set goals and be persistent in achieving them.",
-                    "is interested in learning, listens attentively, and makes a solid effort to avoid distractions.",
-                    "is accountable and responsible, makes smart decisions, and admits mistakes.",
-                    "relates well to classmates and is appreciative of different perspectives and experiences.",
-                    "excels at applying what is learned in the classroom to real-world and real-life situations.",
-                    "has brought enthusiasm, positivity, and maturity to class, making it a pleasure to teach."
-                ];
-                const randomTeacherComment = teacherComments[Math.floor(Math.random() * teacherComments.length)];
-
-
-                const area = document.getElementById('printable-area');
-                area.innerHTML = `
-                    <!-- OPTIMIZED PRINT STYLES -->
-                    <style>
-                        @media print {
-                            @page { margin: 12mm; size: A4; }
-                            body { -webkit-print-color-adjust: exact; }
-                            .rp-table td, .rp-table th { font-size: 0.85rem !important; }
-                            .report-card { font-size: 0.9rem; }
-                        }
-                    </style>
-
-                    <div class="report-card">
-                        
-                        <!-- HEADER -->
-                        <div class="rp-header" style="display: flex; align-items: center; justify-content: center; margin-bottom: 12px; gap: 20px;">
-                            
-                            <img src="https://z-cdn-media.chatglm.cn/files/cc741a52-6dc8-4d89-97cb-fdf1a87aa38a.png?auth_key=1868210321-d7534ff785814de88115631510ed5dbc-0-0d208a01c26657a242308b62449ab19b" 
-                                 alt="Nifty Steps Logo" 
-                                 style="width: 70px; height: 70px; object-fit: contain;">
-                            
-                            <div style="text-align: left;">
-                                <h1 style="color: #1e40af; margin: 0 0 4px 0; line-height: 1.1; font-size: 1.6rem;">NIFTY STEPS COLLEGE</h1>
-                                <p style="font-size: 0.85rem; margin: 0; line-height: 1.3;">31 Yinka Ogunfile Street, Igbo Oluwo Estate, Ikorodu, Lagos State</p>
-                                <p style="font-size: 0.8rem; margin: 0;">www.niftysteps.com.ng | admin@niftysteps.com.ng</p>
-                                <h3 style="margin: 8px 0 0 0; text-decoration: underline; text-transform: uppercase; font-size: 0.95rem;">
-                                    ${isJSS ? 'Junior' : 'Senior'} Secondary School ${term} REPORT SHEET
-                                </h3>
-                            </div>
-                        </div>
-
-                        <div style="display: flex; justify-content: space-between; border: 1px solid #000; padding: 8px; margin-bottom: 20px;">
-                            <div style="line-height: 1.5;">
-                                <strong>NAME:</strong> ${s.name.toUpperCase()}<br>
-                                <strong>CLASS:</strong> ${s.class} ${s.dept ? `(${s.dept})` : ''}
-                            </div>
-                            <div style="line-height: 1.5; text-align: right;">
-                                <strong>ADMIN NO:</strong> ${s.id}<br>
-                                <strong>SESSION:</strong> ${session}
-                            </div>
-                        </div>
-
-                        <table class="rp-table" style="width: 100%; border-collapse: collapse; border: 1px solid #000; font-size: 0.85rem;">
-                            <thead>
-                                <tr style="background: #e2e8f0;">
-                                    <th style="border: 1px solid #000; padding: 5px; text-align: left;">SUBJECTS</th>
-                                    <th style="border: 1px solid #000; padding: 5px;">CA</th>
-                                    <th style="border: 1px solid #000; padding: 5px;">EXAM</th>
-                                    <th style="border: 1px solid #000; padding: 5px;">TOTAL</th>
-                                    <th style="border: 1px solid #000; padding: 5px;">GRADE</th>
-                                    <th style="border: 1px solid #000; padding: 5px; text-align: left;">COMMENT</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${subjectsList.map(sub => {
-                                    const sc = scores[sub] || { ca: '', exam: '' };
-                                    const total = (Number(sc.ca) || 0) + (Number(sc.exam) || 0);
-                                    const gradeInfo = getGradeInfo(total);
-                                    const show = (sc.ca !== '' || sc.exam !== '');
-                                    return `
-                                        <tr>
-                                            <td style="border: 1px solid #000; padding: 5px;">${sub}</td>
-                                            <td style="border: 1px solid #000; padding: 5px; text-align: center;">${show ? sc.ca : '-'}</td>
-                                            <td style="border: 1px solid #000; padding: 5px; text-align: center;">${show ? sc.exam : '-'}</td>
-                                            <td style="border: 1px solid #000; padding: 5px; text-align: center; font-weight: bold;">${show ? total : '-'}</td>
-                                            <td style="border: 1px solid #000; padding: 5px; text-align: center; font-weight: bold;">${show ? gradeInfo.g : '-'}</td>
-                                            <td style="border: 1px solid #000; padding: 5px;">${show ? gradeInfo.c : '-'}</td>
-                                        </tr>`;
-                                }).join('')}
-                                
-                                <!-- TOTAL / PERCENTAGE ROW -->
-                                <tr style="background-color: #f1f5f9; font-weight: bold;">
-                                    <td style="border: 1px solid #000; padding: 5px;" colspan="3">GRAND TOTAL / PERCENTAGE</td>
-                                    <td style="border: 1px solid #000; padding: 5px; text-align: center;">${grandTotalScore}</td>
-                                    <td style="border: 1px solid #000; padding: 5px; text-align: center;">-</td>
-                                    <td style="border: 1px solid #000; padding: 5px; text-align: center;">${overallPercentage}%</td>
-                                </tr>
-                            </tbody>
-                        </table>
-
-                        <!-- COMMENTS SECTION -->
-                        <div style="margin-top: 20px; display: flex; justify-content: space-between; gap: 20px;">
-                            <div style="font-size: 0.85rem; border: 1px solid #000; padding: 10px; width: 60%;">
-                                <strong>TEACHER'S COMMENT:</strong><br>
-                                ${s.name.charAt(0).toUpperCase() + s.name.slice(1)} ${randomTeacherComment}
-                            </div>
-                            <div style="font-size: 0.85rem; border: 1px solid #000; padding: 10px; width: 38%;">
-                                <strong>PRINCIPAL'S COMMENT:</strong><br>
-                                ${principalComment}
-                            </div>
-                        </div>
-
-                        <div style="margin-top: 25px; display: flex; justify-content: space-between; align-items: flex-end;">
-                            <div style="font-size: 0.75rem; border: 1px solid #000; padding: 10px; width: 55%;">
-                                <strong>GRADING KEY:</strong><br>
-                                ${isJSS ? 
-                                    'A: 80-100 (Distinction), B: 70-79 (Excellent), BC: 60-69 (Very Good), C: 50-59 (Good), P: 40-49 (Pass), F: 0-39 (Fail)' : 
-                                    'A1: 80-100, B2: 75-79, B3: 70-74, C4: 65-69, C5: 60-64, C6: 50-59, D7: 45-49, E8: 40-44, F9: 0-39'}
-                            </div>
-                            <div style="text-align: center;">
-                                <div style="border-bottom: 1px solid #000; width: 170px; height: 50px;"></div>
-                                <p style="font-size: 0.8rem; margin-top: 5px;">Principal's Signature</p>
-                            </div>
-                        </div>
+          const grid = document.getElementById("landing-grid");
+          this.showSection("section-landing");
+          const dirName =
+            this.state.viewContext.mode === "midterm" ? "Mid-Term" : "Exam";
+          grid.innerHTML = `
+                    <div class="breadcrumbs">
+                        <span onclick="app.goHome()">Home</span> > 
+                        <span onclick="app.loadClassList('${this.state.viewContext.mode}')">${dirName} Directory</span> > 
+                        <span>${clsName}</span>
                     </div>
                 `;
 
-                this.closeModals();
-                setTimeout(() => { window.print(); }, 500);
-            },
-            
-            showToast: function(m, t) {
-                const x = document.getElementById('toast');
-                document.getElementById('toast-msg').textContent = m;
-                x.className = `toast show ${t}`;
-                setTimeout(()=>x.classList.remove('show'), 3000);
-            }
-        };
+          if (subsToShow.length === 0) {
+            grid.innerHTML += `<p class="text-center">No subjects assigned.</p>`;
+          } else {
+            subsToShow.forEach((sub) => {
+              grid.innerHTML += `
+                            <div class="card" onclick="app.loadBatchEntry('${clsName}', '${sub}')">
+                                <div class="card-content"><div class="card-title">${sub}</div><div class="card-meta">Enter Scores</div></div>
+                                <div class="card-footer"><button class="btn btn-outline btn-sm w-full">Open</button></div>
+                            </div>
+                        `;
+            });
+          }
+        },
 
-        document.addEventListener('DOMContentLoaded', () => app.init());
+        // --- BATCH SCORE ENTRY ---
+        loadBatchEntry: async function (cls, sub) {
+          this.state.viewContext.cls = cls;
+          this.state.viewContext.sub = sub;
+          const mode = this.state.viewContext.mode;
+          const isMidTerm = mode === "midterm";
+
+          const bread = document.getElementById("landing-grid");
+          const dirName = isMidTerm ? "Mid-Term" : "Exam";
+          bread.innerHTML = `
+                    <div class="breadcrumbs">
+                        <span onclick="app.goHome()">Home</span> > 
+                        <span onclick="app.loadClassList('${mode}')">${dirName} Directory</span> > 
+                        <span onclick="app.loadSubjectList('${cls}')">${cls}</span> > 
+                        <span class="font-bold">${sub}</span>
+                    </div>
+                `;
+
+          const thead = document.getElementById("batch-headers");
+          if (isMidTerm) {
+            thead.innerHTML = `
+                <th>Admin No</th>
+                <th>Name</th>
+                <th>Mid-Term Score (100)</th>
+                <th>Grade</th>
+              `;
+            document.getElementById("batch-entry-title").innerText =
+              "Mid-Term Score Entry";
+          } else {
+            thead.innerHTML = `
+                <th>Admin No</th>
+                <th>Name</th>
+                <th>CA (40)</th>
+                <th>Exam (60)</th>
+                <th>Total (100)</th>
+              `;
+            document.getElementById("batch-entry-title").innerText =
+              "Exam Score Entry";
+          }
+
+          document.getElementById("batch-crumb-dir").textContent = dirName;
+          document.getElementById("batch-crumb-class").textContent = cls;
+          document.getElementById("batch-crumb-subject").textContent = sub;
+
+          document.getElementById("batch-actions").innerHTML =
+            this.state.currentUser.role === "Admin" ||
+            this.state.currentUser.role === "Head"
+              ? `<button class="btn btn-primary btn-sm" onclick="app.openAddStudentModal('${cls}')">+ Add Student</button>`
+              : "";
+
+          const stds = await GoogleSheetService.loadStudents(cls);
+          const tbody = document.getElementById("batch-rows");
+          tbody.innerHTML = "";
+
+          if (stds && stds.length > 0) {
+            stds.forEach((s) => {
+              const score = s.scores[sub] || { ca: "", exam: "", total: "" };
+              let rowHtml = `<tr data-sid="${s.id}"><td data-label="Admin No">${s.id}</td><td data-label="Name"><strong>${s.name}</strong></td>`;
+
+              if (isMidTerm) {
+                const val = score.total || "";
+                const grade = val
+                  ? this.getGrade(val, cls.startsWith("JSS"))
+                  : "-";
+                rowHtml += `
+                    <td data-label="Score"><input type="number" class="form-control input-midterm input-total" min="0" max="100" value="${val}"></td>
+                    <td data-label="Grade" class="grade-cell" style="font-weight:bold">${grade}</td>
+                  `;
+              } else {
+                const ca = score.ca || "";
+                const ex = score.exam || "";
+                const total = (parseInt(ca) || 0) + (parseInt(ex) || 0);
+                rowHtml += `
+                    <td data-label="CA Score"><input type="number" class="form-control score-input-mini input-ca" min="0" max="40" value="${ca}"></td>
+                    <td data-label="Exam Score"><input type="number" class="form-control score-input-mini input-exam" min="0" max="60" value="${ex}"></td>
+                    <td data-label="Total"><span class="total-mini" style="font-weight:bold; font-size:1.1rem;">${total}</span></td>
+                  `;
+              }
+              rowHtml += `</tr>`;
+              tbody.innerHTML += rowHtml;
+            });
+          } else {
+            const colCount = isMidTerm ? 4 : 5;
+            tbody.innerHTML = `<tr><td colspan="${colCount}" class="text-center">No students found.</td></tr>`;
+          }
+
+          if (isMidTerm) {
+            document.querySelectorAll(".input-total").forEach((inp) => {
+              inp.addEventListener("input", (e) => {
+                const val = parseInt(e.target.value) || 0;
+                const r = e.target.closest("tr");
+                const gradeCell = r.querySelector(".grade-cell");
+                gradeCell.textContent = this.getGrade(
+                  val,
+                  cls.startsWith("JSS"),
+                );
+              });
+            });
+          } else {
+            document.querySelectorAll(".score-input-mini").forEach((inp) => {
+              inp.addEventListener("input", (e) => {
+                const r = e.target.closest("tr");
+                const ca = parseInt(r.querySelector(".input-ca").value) || 0;
+                const ex = parseInt(r.querySelector(".input-exam").value) || 0;
+                r.querySelector(".total-mini").textContent = ca + ex;
+              });
+            });
+          }
+
+          this.showSection("section-batch-entry");
+        },
+
+        saveBatchScores: async function () {
+          const rows = document.querySelectorAll("#batch-rows tr");
+          const scores = {};
+          const isMidTerm = this.state.viewContext.mode === "midterm";
+
+          rows.forEach((row) => {
+            const sid = row.dataset.sid;
+            if (!sid) return;
+            if (isMidTerm) {
+              const total = row.querySelector(".input-total").value;
+              scores[sid] = { total: parseInt(total) || 0 };
+            } else {
+              const ca = row.querySelector(".input-ca").value;
+              const ex = row.querySelector(".input-exam").value;
+              scores[sid] = { ca: parseInt(ca) || 0, exam: parseInt(ex) || 0 };
+            }
+          });
+
+          let res;
+          if (isMidTerm) {
+            res = await GoogleSheetService.saveMidTermScores(
+              this.state.viewContext.cls,
+              this.state.viewContext.sub,
+              scores,
+            );
+          } else {
+            res = await GoogleSheetService.saveScores(
+              this.state.viewContext.cls,
+              this.state.viewContext.sub,
+              scores,
+            );
+          }
+
+          if (res && res.status === "success") {
+            this.showToast("Scores Saved Successfully", "success");
+            this.loadBatchEntry(
+              this.state.viewContext.cls,
+              this.state.viewContext.sub,
+            );
+          } else {
+            this.showToast("Error saving", "error");
+          }
+        },
+
+        // --- STUDENT DETAIL (Exam vs Mid-Term Logic) ---
+        loadStudentDetail: async function (sid) {
+          this.state.viewContext.sid = sid;
+          const res = await GoogleSheetService.getFullResult(sid);
+          if (!res.info)
+            return this.showToast("Error loading student", "error");
+
+          const s = res.info;
+          const isJSS = s.class.startsWith("JSS");
+          const allSubs = isJSS ? JSS_SUBJECTS : SSS_SUBJECTS.All;
+
+          const isMidTerm = this.state.viewContext.resultType === "midterm";
+
+          this.showSection("section-student-detail");
+          document.getElementById("det-crumb-cls").textContent = s.class;
+          document.getElementById("det-crumb-name").textContent = s.name;
+          document.getElementById("det-name").textContent =
+            s.name + (isMidTerm ? " (Mid-Term)" : " (Exam)");
+
+          const isClassTeacher =
+            this.state.currentUser.role === "Class Teacher";
+          const inputStyle = isClassTeacher
+            ? "border: none; background: transparent; padding: 0; color: inherit;"
+            : "";
+          const readonlyAttr = isClassTeacher ? "readonly" : "";
+
+          const thead = document.getElementById("det-score-head");
+          const tbody = document.getElementById("det-score-rows");
+          tbody.innerHTML = "";
+
+          if (isMidTerm) {
+            // MID-TERM TABLE
+            thead.innerHTML = `<tr><th>Subject</th><th>Total (100)</th><th>Grade</th></tr>`;
+            allSubs.forEach((sub) => {
+              const score = res.scores[sub] || { total: "" };
+              const val = score.total || 0;
+              tbody.innerHTML += `
+                        <tr data-sub="${sub}">
+                            <td>${sub}</td>
+                            <td><input type="number" class="form-control input-midterm input-total" min="0" max="100" value="${val}" ${readonlyAttr} style="${inputStyle}"></td>
+                            <td style="font-weight:bold">${this.getGrade(val, isJSS)}</td>
+                        </tr>
+                    `;
+            });
+          } else {
+            // EXAM TABLE
+            thead.innerHTML = `<tr><th>Subject</th><th>CA</th><th>Exam</th><th>Total</th><th>Grade</th></tr>`;
+            allSubs.forEach((sub) => {
+              const score = res.scores[sub] || { ca: "", exam: "" };
+              const total =
+                (parseInt(score.ca) || 0) + (parseInt(score.exam) || 0);
+              tbody.innerHTML += `
+                        <tr data-sub="${sub}">
+                            <td>${sub}</td>
+                            <td><input type="number" class="form-control input-ca" min="0" max="40" value="${
+                              score.ca
+                            }" ${readonlyAttr} style="${inputStyle}"></td>
+                            <td><input type="number" class="form-control input-exam" min="0" max="60" value="${
+                              score.exam
+                            }" ${readonlyAttr} style="${inputStyle}"></td>
+                            <td style="font-weight:bold">${total}</td>
+                            <td>${this.getGrade(total, isJSS)}</td>
+                        </tr>
+                    `;
+            });
+          }
+
+          const saveBtn = document.querySelector(
+            'button[onclick="app.saveAdminOverride()"]',
+          );
+          if (saveBtn) {
+            saveBtn.style.display = isClassTeacher ? "none" : "inline-flex";
+          }
+        },
+
+        saveAdminOverride: async function () {
+          const sid = this.state.viewContext.sid;
+          const rows = document.querySelectorAll("#det-score-rows tr");
+          const scores = {};
+          const isMidTerm = this.state.viewContext.resultType === "midterm";
+
+          rows.forEach((r) => {
+            const sub = r.dataset.sub;
+            if (isMidTerm) {
+              const total = r.querySelector(".input-total").value;
+              scores[sub] = { total: parseInt(total) || 0 };
+            } else {
+              const ca = r.querySelector(".input-ca").value;
+              const ex = r.querySelector(".input-exam").value;
+              scores[sub] = { ca: parseInt(ca) || 0, exam: parseInt(ex) || 0 };
+            }
+          });
+
+          const res = await GoogleSheetService.saveAdminScores(
+            sid,
+            this.state.viewContext.cls,
+            scores,
+          );
+          if (res.status === "success") {
+            this.showToast("Admin Override Saved", "success");
+            this.loadStudentDetail(sid);
+          } else {
+            this.showToast("Error saving", "error");
+          }
+        },
+
+        // --- PRINTING LOGIC ---
+        printResult: function () {
+          const sid = this.state.viewContext.sid;
+          if (!sid) {
+            this.showToast("No student selected", "error");
+            return;
+          }
+          const isMidTerm = this.state.viewContext.resultType === "midterm";
+
+          GoogleSheetService.getFullResult(sid).then((res) => {
+            if (res.status !== "success") return;
+
+            const s = res.info;
+            const scores = res.scores;
+            const isJSS = s.class.startsWith("JSS");
+            const allSubs = isJSS ? JSS_SUBJECTS : SSS_SUBJECTS.All;
+
+            const printArea = document.getElementById("printable-area");
+
+            if (isMidTerm) {
+              // --- MID-TERM PRINT FORMAT ---
+              let rowsHtml = "";
+              let totalScore = 0;
+              let totalObtainable = allSubs.length * 100;
+
+              allSubs.forEach((sub) => {
+                const score = scores[sub] || {};
+                // FIX: Look for 'total' property, fallback to 0 if undefined
+                const obtained = score.total !== undefined ? score.total : 0;
+                totalScore += obtained;
+                const grade = this.getDocumentGrade(obtained);
+                rowsHtml += `
+                            <tr>
+                                <td>${sub}</td>
+                                <td>100</td>
+                                <td>${obtained}</td>
+                                <td>-</td>
+                                <td>${grade}</td>
+                                <td>${this.getComment(grade)}</td>
+                            </tr>
+                        `;
+              });
+
+              const percentage = Math.round(
+                (totalScore / totalObtainable) * 100,
+              );
+
+              printArea.innerHTML = `
+                        <div class="rp-header">
+                            <div class="rp-school-name">Nifty Steps College</div>
+                            <div class="rp-address">31 Yinka Ogunfile Street, Igbo Oluwo Estate, Ikorodu, Lagos State</div>
+                            <div class="rp-title">MID-TERM REPORT SHEET</div>
+                        </div>
+                        <div class="rp-info-grid">
+                            <div><strong>Name:</strong> ${s.name}</div>
+                            <div><strong>Admin No:</strong> ${s.id}</div>
+                            <div><strong>Class:</strong> ${s.class}</div>
+                            <div><strong>Session:</strong> 2025/2026</div>
+                        </div>
+                        <table class="rp-table">
+                            <thead>
+                                <tr>
+                                    <th>Subjects</th>
+                                    <th>Mark Obtainable</th>
+                                    <th>Mark Obtained</th>
+                                    <th>Class Avg</th>
+                                    <th>Grade</th>
+                                    <th>Comment</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rowsHtml}</tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="2"><strong>Total / Percentage (%) :</strong></td>
+                                    <td><strong>${totalScore} / ${percentage}%</strong></td>
+                                    <td>-</td>
+                                    <td>-</td>
+                                    <td>-</td>
+                                    <td>-</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                        <div style="margin-top: 30px;">
+                            <strong>Principal's Comment:</strong> <span style="border-bottom: 1px solid black; display: inline-block; width: 60%;"></span>
+                        </div>
+                        <div class="rp-footer">
+                            <div class="rp-signature">Class Teacher's Signature</div>
+                            <div class="rp-signature">Principal's Signature</div>
+                        </div>
+                    `;
+            } else {
+              // --- EXAM PRINT FORMAT (Standard Broadsheet) ---
+              let rowsHtml = "";
+              allSubs.forEach((sub) => {
+                const score = scores[sub] || {};
+                // FIX: Ensure we look for ca and exam, default to 0
+                const ca = score.ca !== undefined ? score.ca : 0;
+                const exam = score.exam !== undefined ? score.exam : 0;
+                const total = parseInt(ca) + parseInt(exam);
+                const grade = this.getGrade(total, isJSS);
+
+                rowsHtml += `
+                            <tr>
+                                <td>${sub}</td>
+                                <td>${ca}</td>
+                                <td>${exam}</td>
+                                <td>${total}</td>
+                                <td>${grade}</td>
+                            </tr>
+                        `;
+              });
+
+              printArea.innerHTML = `
+                        <div class="rp-header">
+                            <div class="rp-school-name">Nifty Steps College</div>
+                            <div class="rp-title">EXAM RESULT BROADSHEET</div>
+                        </div>
+                        <div class="rp-info-grid">
+                            <div><strong>Name:</strong> ${s.name}</div>
+                            <div><strong>Admin No:</strong> ${s.id}</div>
+                            <div><strong>Class:</strong> ${s.class}</div>
+                            <div><strong>Session:</strong> 2025/2026</div>
+                        </div>
+                        <table class="rp-table">
+                            <thead>
+                                <tr>
+                                    <th>Subject</th>
+                                    <th>CA (40)</th>
+                                    <th>Exam (60)</th>
+                                    <th>Total (100)</th>
+                                    <th>Grade</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rowsHtml}</tbody>
+                        </table>
+                        <div class="rp-footer">
+                            <div class="rp-signature">Teacher's Signature</div>
+                            <div class="rp-header">Nifty Steps College</div> <!-- Duplicate div removed to fix HTML error -->
+                            <div class="rp-signature">Principal's Signature</div>
+                        </div>
+                    `;
+            }
+
+            setTimeout(() => window.print(), 500);
+          });
+        },
+
+        // Helper for specific Document Grading Rules
+        getDocumentGrade: function (score) {
+          if (score >= 80) return "A";
+          if (score >= 70) return "B";
+          if (score >= 60) return "BC";
+          if (score >= 50) return "C";
+          if (score >= 40) return "P";
+          return "F";
+        },
+
+        getComment: function (grade) {
+          switch (grade) {
+            case "A":
+              return "Distinction";
+            case "B":
+              return "Excellent";
+            case "BC":
+              return "Very Good";
+            case "C":
+              return "Good";
+            case "P":
+              return "Pass";
+            case "F":
+              return "Fail";
+            default:
+              return "-";
+          }
+        },
+
+        // --- FEE MANAGEMENT (UPDATED FOR GOOGLE SHEETS) ---
+        loadFees: async function () {
+          this.showSection("section-fees");
+          const clsFilter = document.getElementById("feeClassFilter");
+          const curVal = clsFilter.value;
+          clsFilter.innerHTML =
+            '<option value="" disabled selected>Select Class</option>';
+          ALL_CLASSES.forEach(
+            (c) =>
+              (clsFilter.innerHTML += `<option value="${c}">${c}</option>`),
+          );
+          if (curVal) clsFilter.value = curVal;
+
+          if (clsFilter.value) {
+            await this.renderFeeTable(clsFilter.value);
+          }
+        },
+
+        renderFeeTable: async function (cls) {
+          // Fetch Transactions from Google Sheets
+          const allTx = await GoogleSheetService.getFeeTransactions();
+          const config = FeeService.getConfig()[cls];
+          const stds = await GoogleSheetService.loadStudents(cls);
+
+          const tbody = document.getElementById("fee-tbody");
+          tbody.innerHTML = "";
+
+          let stats = { exp: 0, col: 0, out: 0 };
+
+          stds.forEach((s) => {
+            // 1. Check if student is NEW or OLD from the database status
+            // (Default to Old if status is missing)
+            const isNew = s.status === "New";
+
+            // 2. Calculate Paid based on transactions
+            const myTxs = allTx.filter((t) => t.studentId === s.id);
+            const paid = myTxs.reduce((sum, t) => sum + parseInt(t.amount), 0);
+
+            // 3. Calculate Total Fee based on status
+            const schoolFee = config ? config.schoolFee : 0;
+            const regFee = config ? config.regFee : 0;
+            const totalFee = isNew ? schoolFee + regFee : schoolFee;
+
+            stats.exp += totalFee;
+            stats.col += paid;
+            stats.out += totalFee - paid;
+
+            const badge =
+              totalFee - paid <= 0
+                ? "status-paid"
+                : paid > 0
+                  ? "status-partial"
+                  : "status-owing";
+
+            tbody.innerHTML += `
+                        <tr>
+                            <td><strong>${s.name}</strong><br><small>${
+                              s.id
+                            }</small></td>
+                            <td><span class="badge">${isNew ? "New" : "Old"} Student</span></td>
+                            <td>₦${totalFee.toLocaleString()}</td>
+                            <td>₦${paid.toLocaleString()}</td>
+                            <td style="color:var(--danger); font-weight:bold">₦${(totalFee - paid).toLocaleString()}</td>
+                            <td><span class="fee-status-badge ${badge}">${
+                              totalFee - paid <= 0
+                                ? "Paid"
+                                : paid > 0
+                                  ? "Partial"
+                                  : "Owing"
+                            }</span></td>
+                            <td>
+                                <!-- Pass isNew to openPayModal so calculation is correct -->
+                                <button class="btn btn-primary btn-sm" onclick="app.openPayModal('${
+                                  s.id
+                                }', '${s.name}', '${cls}', ${isNew})">Pay</button>
+                            </td>
+                        </tr>
+                    `;
+          });
+
+          document.getElementById("fee-total-expected").textContent =
+            `₦${stats.exp.toLocaleString()}`;
+          document.getElementById("fee-total-collected").textContent =
+            `₦${stats.col.toLocaleString()}`;
+          document.getElementById("fee-total-outstanding").textContent =
+            `₦${stats.out.toLocaleString()}`;
+        },
+
+        openPayModal: function (sid, name, cls, isNew) {
+          const config = FeeService.getConfig()[cls];
+          document.getElementById("payStudentId").value = sid;
+          document.getElementById("payStudentName").value = name;
+          document.getElementById("payBaseFee").value =
+            `₦${config.schoolFee.toLocaleString()}`;
+          document.getElementById("payRegFee").value =
+            `₦${config.regFee.toLocaleString()}`;
+          document.getElementById("payAmount").value = "";
+
+          this.state.feeContext = {
+            sid,
+            cls,
+            base: config.schoolFee,
+            reg: config.regFee,
+          };
+
+          // Set Radio Button based on passed 'isNew' status
+          const radioVal = isNew ? "New" : "Old";
+          const radioBtn = document.querySelector(
+            `input[name="stdType"][value="${radioVal}"]`,
+          );
+          if (radioBtn) radioBtn.checked = true;
+
+          this.calcModalTotal();
+
+          document.getElementById("modal-pay").style.display = "flex";
+        },
+
+        calcModalTotal: function () {
+          const isNew =
+            document.querySelector('input[name="stdType"]:checked').value ===
+            "New";
+          const total = isNew
+            ? this.state.feeContext.base + this.state.feeContext.reg
+            : this.state.feeContext.base;
+          document.getElementById("payTotalDue").textContent =
+            `₦${total.toLocaleString()}`;
+          return total;
+        },
+
+        confirmPayment: async function () {
+          const amount = parseInt(document.getElementById("payAmount").value);
+          const isNew =
+            document.querySelector('input[name="stdType"]:checked').value ===
+            "New";
+
+          // FIX: calcModalTotal returns a Number, so we compare numbers directly.
+          // We do not need .replace()
+          const totalDue = this.calcModalTotal();
+
+          if (!amount || amount <= 0)
+            return this.showToast("Invalid Amount", "warning");
+          if (amount > totalDue)
+            return this.showToast("Amount exceeds due", "error");
+
+          // Save to Google Sheets
+          const res = await GoogleSheetService.saveFeeTransaction({
+            txId: Date.now().toString(),
+            studentId: this.state.feeContext.sid,
+            amount: amount,
+            type: isNew ? "New" : "Old",
+            date: new Date().toISOString().split("T")[0],
+          });
+
+          if (res.status === "success") {
+            this.showToast("Payment Recorded Successfully", "success");
+            this.closeModals();
+            this.renderFeeTable(this.state.feeContext.cls);
+          } else {
+            this.showToast("Error saving payment", "error");
+          }
+        },
+
+        switchFeeTab: function (tab) {
+          const btns = document.querySelectorAll(".fee-tab-btn");
+          btns.forEach((b) => b.classList.remove("active"));
+          event.target.classList.add("active");
+
+          if (tab === "collect") {
+            document
+              .getElementById("fee-tab-collect")
+              .classList.remove("hidden");
+            document.getElementById("fee-tab-settings").classList.add("hidden");
+          } else {
+            document.getElementById("fee-tab-collect").classList.add("hidden");
+            document
+              .getElementById("fee-tab-settings")
+              .classList.remove("hidden");
+            this.renderFeeSettings();
+          }
+        },
+
+        renderFeeSettings: function () {
+          const config = FeeService.getConfig();
+          const tbody = document.getElementById("fee-settings-tbody");
+          tbody.innerHTML = "";
+          ALL_CLASSES.forEach((cls) => {
+            const fees = config[cls] || { schoolFee: 0, regFee: 0 };
+            tbody.innerHTML += `
+                        <tr>
+                            <td><strong>${cls}</strong></td>
+                            <td><input type="number" class="form-control set-base" data-cls="${cls}" value="${fees.schoolFee}" style="width:120px"></td>
+                            <td><input type="number" class="form-control set-reg" data-cls="${cls}" value="${fees.regFee}" style="width:120px"></td>
+                        </tr>
+                    `;
+          });
+        },
+
+        saveFeeSettings: function () {
+          const newConfig = {};
+          document.querySelectorAll(".set-base").forEach((inp) => {
+            const cls = inp.dataset.cls;
+            const regInp = document.querySelector(
+              `.set-reg[data-cls="${cls}"]`,
+            );
+            newConfig[cls] = {
+              schoolFee: parseInt(inp.value) || 0,
+              regFee: parseInt(regInp.value) || 0,
+            };
+          });
+          FeeService.saveConfig(newConfig);
+          this.showToast("Settings Saved", "success");
+        },
+
+        // --- UTILS ---
+        openAddStudentModal: function (cls) {
+          this.state.viewContext.tempClass = cls;
+          document
+            .getElementById("modal-dept-group")
+            .classList.toggle("hidden", !cls.startsWith("SSS"));
+          document.getElementById("modal-add-student").style.display = "flex";
+        },
+
+        addStudentConfirm: async function () {
+          const name = document.getElementById("newStdName").value;
+          const id = document.getElementById("newStdId").value;
+          const gender = document.getElementById("newStdGender").value;
+          const dept = document.getElementById("newStdDept").value;
+
+          if (!name || !id) return this.showToast("Fill all fields", "warning");
+
+          const success = await GoogleSheetService.addStudent({
+            id,
+            name,
+            gender,
+            class: this.state.viewContext.tempClass,
+            dept: this.state.viewContext.tempClass.startsWith("SSS")
+              ? dept
+              : "",
+          });
+
+          if (success) {
+            this.showToast("Student Added", "success");
+            this.closeModals();
+            if (this.state.viewContext.mode === "admin-manage") {
+              this.loadAdminRoster(
+                this.state.viewContext.tempClass,
+                this.state.viewContext.resultType,
+              );
+            } else {
+              this.loadBatchEntry(
+                this.state.viewContext.cls,
+                this.state.viewContext.sub,
+              );
+            }
+          } else {
+            this.showToast("Error adding student", "error");
+          }
+        },
+
+        openDebtorModal: function () {
+          document.getElementById("modal-debtors").style.display = "flex";
+        },
+
+        generateDebtorReport: function () {
+          this.closeModals();
+          this.showToast("Generating report...", "success");
+        },
+
+        getGrade: function (score, isJSS) {
+          if (isJSS) {
+            if (score >= 80) return "A";
+            if (score >= 70) return "B";
+            if (score >= 60) return "BC";
+            if (score >= 50) return "C";
+            if (score >= 40) return "P";
+            return "F";
+          } else {
+            if (score >= 80) return "A1";
+            if (score >= 75) return "B2";
+            if (score >= 70) return "B3";
+            if (score >= 65) return "C4";
+            if (score >= 60) return "C5";
+            if (score >= 50) return "C6";
+            if (score >= 45) return "D7";
+            if (score >= 40) return "E8";
+            return "F9";
+          }
+        },
+
+        showToast: function (msg, type) {
+          const t = document.getElementById("toast");
+          t.textContent = msg;
+          t.className = `toast show ${type}`;
+          setTimeout(() => t.classList.remove("show"), 3000);
+        },
+      };
+
+      document.addEventListener("DOMContentLoaded", () => app.init());
     </script>
-</body>
+  </body>
 </html>
